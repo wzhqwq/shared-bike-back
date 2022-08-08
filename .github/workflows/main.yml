@@ -32,17 +32,13 @@ jobs:
       - name: Build Project
         run: yarn
         
-      - name: ssh deploy
+      - name: Transfer Files
         uses: easingthemes/ssh-deploy@v2.2.11
         with:
-          # Private Key
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          # Remote host
           REMOTE_HOST: ${{ secrets.SSH_HOST }}
-          # Remote user
           REMOTE_USER: ${{ secrets.SSH_USER }}
-          # Source directory
           SOURCE: ./
-          # Target directory
           TARGET: ~/sbike-back
+          EXCLUDE: .git
       
