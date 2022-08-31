@@ -14,7 +14,7 @@ log4js.configure({
   },
   categories: {
     default: { appenders: ["error"], level: "error" },
-    'default.all': { appenders: ["all"], level: "trace" },
+    'default.all': { appenders: ["all"], level: "debug" },
   },
 })
 

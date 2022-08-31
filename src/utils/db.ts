@@ -1,4 +1,4 @@
-import { Connection, createPool, PoolConnection } from "mysql"
+import { Connection, createPool, PoolConnection, QueryOptions } from "mysql"
 import * as process from "process"
 import * as log4js from "log4js"
 import { createClient } from "redis"
@@ -23,12 +23,12 @@ type QueryResult<RowT> = RowT[] & {
   insertId?: number       // Insert
 }
 
-export function query<RowT>(sql: string, values?: any[], connection?: Connection): Promise<QueryResult<RowT>> {
+export function query<RowT>(sql: string | QueryOptions, values?: any[], connection?: Connection): Promise<QueryResult<RowT>> {
   return new Promise((resolve, reject) => {
     (connection ?? pool).query(sql, values, (error, data, field) => {
-      logger.trace("MySQL Executed: ", sql)
+      logger.debug("MySQL Executed: ", sql)
       if (error) {
-        reject(error)
+        reject(new DatabaseError(error))
         logger.error("MySQL Execution Failed: ", error.sqlMessage, error.sql)
         return
       }

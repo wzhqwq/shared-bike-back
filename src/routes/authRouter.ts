@@ -1,9 +1,11 @@
 import * as Router from "@koa/router"
 import * as body from "koa-body"
-import RawUser from "../entities/dto/RawUser"
+import { SignUpRequest } from "../entities/dto/RawRecords"
+import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
+import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { createSpecificUser, requestToBe, signIn, signUp } from "../services/UserService"
-import { checkBody, checkBodyAsEntity, lengthRestriction } from "../utils/body"
+import { createSpecificUser, editNickname, editProfile, requestToBe, signIn, signUp } from "../services/UserService"
+import { checkBody, checkBodyAsEntity } from "../utils/body"
 
 let authRouter = new Router()
 
@@ -22,20 +24,31 @@ authRouter.post('/register_as_customer', async ctx => {
   ctx.body = Result.success(await createSpecificUser(user.id, true))
 })
 
-authRouter.post('/request_to_be', checkBody([
-  { key: 'type', restrictions: [o => (o !== 0 && o !== 1) ? '应为0或1' : ''] },
-  { key: 'name', restrictions: ['string', lengthRestriction(1, 10)] },
-  { key: 'phone', restrictions: ['string', lengthRestriction()] },
-]), async ctx => {
+authRouter.post('/request_to_be', checkBodyAsEntity(SignUpRequest), async ctx => {
   let user = ctx.state.user
-  let data: { type: number, phone: string, name: string } = ctx.request.body
+  let data = ctx.request.body as SignUpRequest
+  data.user_id = user.id
 
-  ctx.body = Result.success(await requestToBe({ user_id: user.id, ...data }))
+  ctx.body = Result.success(await requestToBe(data))
 })
 
 authRouter.post('/check_role', async ctx => {
   let user = ctx.state.user
   ctx.body = Result.success(await createSpecificUser(user.id, false))
+})
+
+authRouter.post('/edit_profile', checkBody([
+  { key: 'nickname', restrictions: getRestrictions(RawUser, 'nickname'), nullable: true },
+  { key: 'name', restrictions: getRestrictions(RawMaintainer, 'name'), nullable: true },
+  { key: 'phone', restrictions: getRestrictions(RawMaintainer, 'phone'), nullable: true },
+]), async ctx => {
+  let user = ctx.state.user
+  let data: { nickname: string, phone: string, name: string } = ctx.request.body
+  let basicUser: RawUser = null, extraUser: RawMaintainer | RawManager = null
+
+  if (data.nickname) basicUser = await editNickname(data.nickname, user.id)
+  if (data.phone && data.name) extraUser = await editProfile(data.name, data.phone, user.id, user.role)
+  ctx.body = { basicUser, extraUser }
 })
 
 export default authRouter

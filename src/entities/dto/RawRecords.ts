@@ -1,98 +1,231 @@
-type BaseRecord = {
-  id: number
-  time: number
+import { Column, Entity, Id, Nullable } from "../entity"
+
+class BaseRecord {
+  @Id()
+  @Column(Number)
+  public id: number
+  
+  @Column(Date)
+  public time: Date
 }
 
-type BaseBill = BaseRecord & {
-  expense: number
-  manager_id: number
+@Entity("RideRecord")
+export class RideRecord {
+  @Id()
+  @Column(Number)
+  public id: number
+  
+  @Column(Number)
+  public bike_id: number
+  
+  @Column(Number)
+  public customer_id: number
+  
+  @Column(Number)
+  public mileage: number
+  
+  @Column(Date)
+  public start_time: Date
+  
+  @Column(Date)
+  public end_time: Date
+  
+  @Column(Number)
+  public charge: number
+  
+  @Column(Number)
+  public points_acquired: number
 }
 
-type BaseMainRecord = BaseRecord & {
-  change: number
-  type: number
-  record_id: number
-}
-
-export type RideRecord = {
-  id: number
-  bike_id: number
-  customer_id: number
-  mileage: number
-  start_time: number
-  end_time: number
-  charge: number
-  points_acquired: number
-}
-
-export type MalfunctionRecord = BaseRecord & {
-  ride_id: number
-  malfunction_id: number
-  degree: number
+@Entity("MalfunctionRecord")
+export class MalfunctionRecord extends BaseRecord {
+  
+  @Column(Number)
+  public ride_id: number
+  
+  @Column(Number)
+  public malfunction_id: number
+  
+  @Column(Number)
+  public degree: number
+  
+  @Column(String)
   description: string
+  
+  @Column(String)
   image_url: string
-  status: number
+  
+  @Column(Number)
+  public status: number
 }
 
-export type RepairRecord = BaseRecord & {
-  malfunction_r_id: number
-  maintainer_id: number
-  conclusion: number
+@Entity("RepairRecord")
+export class RepairRecord extends BaseRecord {
+  
+  @Column(Number)
+  public malfunction_r_id: number
+  
+  @Column(Number)
+  public maintainer_id: number
+  
+  @Column(Number)
+  public conclusion: number
 }
 
-export type RechargeRecord = BaseRecord & {
-  customer_id: number
-  amount: number
+@Entity("RechargeRecord")
+export class RechargeRecord extends BaseRecord {
+  
+  @Column(Number)
+  public customer_id: number
+  
+  @Column(Number)
+  public amount: number
 }
 
-export type PunishRecord = BaseRecord & {
-  customer_id: number
-  points_deducted: number
+@Entity("PunishRecord")
+export class PunishRecord extends BaseRecord {
+  
+  @Column(Number)
+  public customer_id: number
+  
+  @Column(Number)
+  public points_deducted: number
+  
+  @Column(String)
   reason: string
 }
 
-export type ExchangeRecord = BaseRecord & {
-  souvenir_id: number
-  customer_id: number
-  amount: number
-  given: number
-  given_by?: number
+@Entity("ExchangeRecord")
+export class ExchangeRecord extends BaseRecord {
+  
+  @Column(Number)
+  public souvenir_id: number
+  
+  @Column(Number)
+  public customer_id: number
+  
+  @Column(Number)
+  public amount: number
+  
+  @Column(Number)
+  public given: number
+  
+  @Column(Number)
+  public given_by?: number
 }
 
-export type DestroyRecord = BaseRecord & {
-  bike_id: number
-  manager_id: number
+@Entity("DestroyRecord")
+export class DestroyRecord extends BaseRecord {
+  
+  @Column(Number)
+  public bike_id: number
+  
+  @Column(Number)
+  public manager_id: number
+  
+  @Column(String)
   reason: string
 }
 
-export type BikeBill = BaseBill & {
-  bike_id: number
-  amount: number
+// bills
+class BaseBill {
+  @Id()
+  @Column(Number)
+  public id: number
+  
+  @Column(Date)
+  public time: Date
+  
+  @Column(Number)
+  public expense: number
+  
+  @Column(Number)
+  public manager_id: number
 }
 
-export type SouvenirBill = BaseBill & {
-  souvenir_id: number
-  amount: number
+@Entity("BikeBill")
+export class BikeBill extends BaseBill {
+  
+  @Column(Number)
+  public bike_id: number
+  
+  @Column(Number)
+  public amount: number
 }
 
-export type OtherBill = BaseBill & {
+@Entity("SouvenirBill")
+export class SouvenirBill extends BaseBill {
+  
+  @Column(Number)
+  public souvenir_id: number
+  
+  @Column(Number)
+  public amount: number
+}
+
+@Entity("OtherBill")
+export class OtherBill extends BaseBill {
+  
+  @Column(String)
   reason: string
 }
 
-export type DepositRecord = BaseMainRecord & {
-  customer_id: number
+// main records
+class BaseMainRecord {
+  @Id()
+  @Column(Number)
+  public id: number
+  
+  @Column(Date)
+  public time: Date
+  
+  @Column(Number)
+  public change: number
+  
+  @Column(Number)
+  public type: number
+  
+  @Column(Number)
+  public record_id: number
 }
 
-export type PointRecord = DepositRecord
-
-export type ManagerBill = BaseMainRecord & {
-  user_id: number
+@Entity("DepositRecord")
+export class DepositRecord extends BaseMainRecord {
+  
+  @Column(Number)
+  public customer_id: number
 }
 
-export type SignUpRequest = BaseRecord & {
-  user_id: number
-  type: number
+@Entity("PointRecord")
+export class PointRecord extends BaseMainRecord {
+  
+  @Column(Number)
+  public customer_id: number
+}
+
+@Entity("ManagerBill")
+export class ManagerBill extends BaseMainRecord {
+  
+  @Column(Number)
+  public user_id: number
+}
+
+@Entity("SignUpRequest")
+export class SignUpRequest extends BaseRecord {
+  @Nullable()
+  @Column(Number)
+  public user_id: number
+  
+  @Column(Number)
+  public type: number
+  
+  @Column(String)
   phone: string
+  
+  @Column(String)
   name: string
-  status: number
+  
+  @Nullable()
+  @Column(Number)
+  public status: number
 }
