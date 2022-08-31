@@ -1,13 +1,13 @@
-import { Column, DbEntity, Entity, Id, Length, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Length, Nullable } from "../entity"
 
 @Entity('User')
 export class RawUser {
-  @Nullable()
-  @Id()
+  @Nullable
+  @Id
   @Column(Number)
   public id: number
 
-  @Nullable()
+  @Nullable
   @Column(Number)
   public role: number
 
@@ -22,28 +22,30 @@ export class RawUser {
 
 @Entity('Customer')
 export class RawCustomer {
-  @Nullable()
-  @Id()
+  @Nullable
+  @Id
+  @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
 
-  @Nullable()
+  @Nullable
   @Column(Number)
   public points: number
 
-  @Nullable()
+  @Nullable
   @Column(Number)
   public deposit: number
 
-  @Nullable()
+  @Nullable
   @Column(Number)
   public ban_time: number
 }
 
 @Entity('Maintainer')
 export class RawMaintainer {
-  @Nullable()
-  @Id()
+  @Nullable
+  @Id
+  @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
 
@@ -55,15 +57,16 @@ export class RawMaintainer {
   @Column(String)
   public phone: string
 
-  @Nullable()
+  @Nullable
   @Column(Number)
   public handle_count: number
 }
 
 @Entity('Manager')
 export class RawManager {
-  @Nullable()
-  @Id()
+  @Nullable
+  @Id
+  @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
 

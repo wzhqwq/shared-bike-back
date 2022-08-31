@@ -4,7 +4,7 @@ import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
 import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { createSpecificUser, editNickname, editProfile, requestToBe, signIn, signUp } from "../services/UserService"
+import { createSpecificUser, editNickname, editProfile, requestToBe, signIn, signUp } from "../services/userService"
 import { checkBody, checkBodyAsEntity } from "../utils/body"
 
 let authRouter = new Router()

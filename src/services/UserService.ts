@@ -98,7 +98,7 @@ export async function listSignUpRequests(lastId: number, size: number = 20) {
   return transactionWrapper("listSignUpRequests", async (connection) => {
     let recordDb = new DbEntity(SignUpRequest, connection)
     let userDb = new DbEntity(RawUser, connection)
-    let joinedDb = new DbJoined(recordDb.asTable([['id', '>', lastId]], size), userDb.asTable(), 'user_id', connection)
+    let joinedDb = new DbJoined(recordDb.asTable([['id', '>', lastId]], size), userDb.asTable(), connection)
     return (await joinedDb.list()).map(([r, u]) => ({ ...r, nickname: u.nickname }))
   })
 }

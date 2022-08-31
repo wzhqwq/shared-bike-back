@@ -1,5 +1,5 @@
 import Router = require("@koa/router")
-import { EntityColumn } from "../entities/entity"
+import { EntityColumn, getColumns } from "../entities/entity"
 
 type BuiltInRestriction = "string" | "number" | "integer"
 
@@ -41,13 +41,13 @@ export function checkProperty(param: CheckParam<any>, value: any) {
   if (errors.length) throw new Error(`字段${param.key.toString()}${errors.join('、')}`)
 }
 
-export function checkBodyAsEntity<T extends Object>(constructor: { new (...args: any[]): T }): Router.Middleware {
+export function checkBodyAsEntity<T extends Object>(C: { new (...args: any[]): T }): Router.Middleware {
   return async (ctx, next) => {
     let o = ctx.request.body
     try {
-      let entity = new constructor()
-      let params = Reflect.get(entity, 'columns') as EntityColumn[]
-      params.forEach(param => param.set(o[param.key]))
+      let entity = new C()
+      let params = getColumns(entity)
+      params.forEach(param => entity[param.key] = o[param.key])
       ctx.request.body = entity
     }
     catch (e) {

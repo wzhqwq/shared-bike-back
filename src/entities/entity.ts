@@ -7,46 +7,55 @@ const columnsSym = Symbol()
 const tableNameSym = Symbol()
 
 export type EntityColumn = CheckParam<any> & {
-  get: () => any,
-  set: (o: any) => void,
-  modified: boolean,
-  isPK: boolean,
-  c: { new (...args: any[]) },
+  isPK: boolean
+  FK?: { tableName: string, key: string }
+  c: { new (...args: any[]) }
+}
+export type EntityProperty = {
+  column: EntityColumn
+  value: any
+  modified: boolean
 }
 
 export function Entity(tableName: string) {
-  return function <T extends { new(...args: any[]) }>(c: T) {
-    return class extends c {
+  return function <T extends { new(...args: any[]) }>(C: T) {
+    return class extends C {
       constructor (...args: any[]) {
         super(...args)
         Reflect.defineMetadata(tableNameSym, tableName, this)
         let baseColumns = getColumns(this)
-        Object.defineProperty(this, 'columns', {
-          value: baseColumns.map(col => {
-            let value = Reflect.get(this, col.key)
-            let column = {
-              ...col,
-              set: (v: any) => {
-                checkProperty(col, v)
-                if (value === v) return
-                value = v
-                column.modified = true
-              },
-              get: () => value,
-              modified: false,
-            }
-            Object.defineProperty(this, col.key, { set: column.set, get: column.get, enumerable: true })
-            return column
-          }),
+        let instanceProperties: EntityProperty[] = []
+        let properties: PropertyDescriptorMap = {}
+        baseColumns.map(column => {
+          let value = Reflect.get(this, column.key)
+          let property = {
+            value,
+            column,
+            modified: false,
+          }
+          instanceProperties.push(property)
+          properties[column.key] = {
+            set: (v: any) => {
+              checkProperty(column, v)
+              property.value = v
+              property.modified = true
+            },
+            get: () => property.value,
+            enumerable: true,
+          }
+          return property
+        })
+        Object.defineProperties(this, properties)
+        Object.defineProperty(this, 'properties', {
+          value: instanceProperties,
           enumerable: false,
         }) 
       }
     }
   }
 }
-
-export function getColumns(target: Object) {
-  let columns = Reflect.getMetadata(columnsSym, target) as Omit<EntityColumn, 'get' | 'set' | 'modified'>[]
+export function getColumns<TEntity extends Object>(target: TEntity) {
+  let columns = Reflect.getMetadata(columnsSym, target) as EntityColumn[]
   if (!columns) {
     columns = []
     Reflect.defineMetadata(columnsSym, columns, target)
@@ -58,6 +67,7 @@ export function getTableName(target: Object) {
   if (!tableName) throw new Error("对象的类没有加@Entity装饰器：" + JSON.stringify(target))
   return tableName
 }
+export const getProperties = (target: Object) => Reflect.get(target, 'properties') as EntityProperty[]
 
 abstract class BaseDb<TEntity extends Object> {
   constructor(
@@ -84,23 +94,23 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
   }
 
   public async save(o: TEntity, forceInsert: boolean = false) {
-    let columns = Reflect.get(o, 'columns') as EntityColumn[]
+    let properties = getProperties(o)
     let tableName = getTableName(o)
 
-    let id = columns.find(k => k.isPK)
-    let modifiedKeys = columns.filter(k => k.modified)
-    if (!id.get() || forceInsert) {
+    let id = properties.find(k => k.column.isPK)
+    let modifiedKeys = properties.filter(k => k.modified)
+    if (!id.value || forceInsert) {
       let { insertId } = await query<null>(
         "INSERT INTO ?? (??) VALUES (?)",
-        [tableName, modifiedKeys.map(k => k.key), modifiedKeys.map(k => k.get())]
+        [tableName, modifiedKeys.map(k => k.column.key), modifiedKeys.map(k => k.value)]
       )
-      id.set(insertId)
+      id.value = insertId
     }
     else {
       await query<null>(
         "UPDATE ?? SET ? WHERE ?? = ?",
-        [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.key]: current.get() }), {}),
-          id.key, id.get()]
+        [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
+          id.column.key, id.value]
       )
     }
     modifiedKeys.forEach(k => { k.modified = false })
@@ -115,8 +125,8 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
       [tableName, ...additionalValues],
     )).map(o => {
       let entity = new this.c()
-      let columns = Reflect.get(entity, 'columns') as EntityColumn[]
-      columns.forEach(k => k.set(o[k.key]))
+      let properties = getProperties(entity)
+      properties.forEach(k => k.value = o[k.column.key])
       return entity
     })
   }
@@ -139,7 +149,6 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
   constructor(
     private leftTable: TableInfo<TLeft>,
     private rightTable: TableInfo<TRight>,
-    private joinColumn: keyof TLeft,
     connection?: Connection,
   ) {
     super(connection)
@@ -147,10 +156,14 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 
   public async list(conditions: ConditionType<TLeft | TRight>[] = [], limit?: number) {
     let [whereClause, additionalValues] = parseCondition(conditions)
+
     let LeftC = this.leftTable[2], RightC = this.rightTable[2]
-    let leftId = getColumns(new LeftC()).find(k => k.key === this.joinColumn).key
-    let rightId = getColumns(new RightC()).find(k => k.isPK).key
     let leftTableName = getTableName(new LeftC()), rightTableName = getTableName(new RightC())
+
+    let e = getColumns(new LeftC()).find(k => k.FK?.tableName === rightTableName)
+    if (!e) throw new Error("没有找到符合条件的外码")
+    let leftId = e.key, rightId = e.FK.key
+
     let q: QueryOptions = {
       sql: `SELECT * FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
         (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
@@ -160,10 +173,10 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
       [...this.leftTable[1], ...this.rightTable[1], leftId, rightId, ...additionalValues],
     )).map<[TLeft, TRight]>(o => {
       let left = new LeftC(), right = new RightC()
-      let leftColumns = Reflect.get(left, 'columns') as EntityColumn[]
-      let rightColumns = Reflect.get(right, 'columns') as EntityColumn[]
-      leftColumns.forEach(k => k.set(o[leftTableName][k.key]))
-      rightColumns.forEach(k => k.set(o[rightTableName][k.key]))
+      let leftProperties = getProperties(left)
+      let rightProperties = getProperties(right)
+      leftProperties.forEach(k => k.value = o[leftTableName][k.column.key])
+      rightProperties.forEach(k => k.value = o[rightTableName][k.column.key])
       return [left, right]
     })
   }
@@ -184,10 +197,10 @@ function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntit
 
 type SupportedConstructor = NumberConstructor | StringConstructor | DateConstructor
 
-export function Column(type: SupportedConstructor, name?: string) {
+export function Column(type: SupportedConstructor) {
   return function (target: Object, key: string) {
     getColumns(target).push({
-      key: name ?? key,
+      key,
       restrictions: [type === Number ? "number" : "string"],
       isPK: false,
       c: type
@@ -195,15 +208,11 @@ export function Column(type: SupportedConstructor, name?: string) {
   }
 }
 
-export function Id() {
-  return function (target: Object, key: string) {
-    getColumns(target).find(k => k.key === key).isPK = true
-  }
+export function Id(target: Object, key: string) {
+  getColumns(target).find(k => k.key === key).isPK = true
 }
-export function Nullable() {
-  return function (target: Object, key: string) {
-    getColumns(target).find(k => k.key === key).nullable = true
-  }
+export function Nullable(target: Object, key: string) {
+  getColumns(target).find(k => k.key === key).nullable = true
 }
 export function Restriction(fn: (o: any) => string) {
   return function (target: Object, key: string) {
@@ -212,6 +221,13 @@ export function Restriction(fn: (o: any) => string) {
 }
 export function Length(min?: number, max?: number) {
   return Restriction(lengthRestriction(min, max))
+}
+export function Foreign<TEntity extends Object>(EntityC: { new (...args: any[]): TEntity }, foreignKey: keyof TEntity) {
+  return function (target: Object, key: string) {
+    let o = new EntityC()
+    let tableName = getTableName(o)
+    getColumns(target).find(k => k.key === key).FK = { tableName, key: foreignKey.toString() }
+  }
 }
 
 export function getRestrictions<TEntity extends Object>(c: { new (...args: any[]): TEntity }, key: keyof TEntity) {

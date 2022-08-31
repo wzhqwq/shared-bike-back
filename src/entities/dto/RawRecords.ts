@@ -1,7 +1,8 @@
-import { Column, Entity, Id, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable } from "../entity"
+import { RawUser } from "./RawUser"
 
 class BaseRecord {
-  @Id()
+  @Id
   @Column(Number)
   public id: number
   
@@ -11,7 +12,7 @@ class BaseRecord {
 
 @Entity("RideRecord")
 export class RideRecord {
-  @Id()
+  @Id
   @Column(Number)
   public id: number
   
@@ -129,7 +130,7 @@ export class DestroyRecord extends BaseRecord {
 
 // bills
 class BaseBill {
-  @Id()
+  @Id
   @Column(Number)
   public id: number
   
@@ -172,7 +173,7 @@ export class OtherBill extends BaseBill {
 
 // main records
 class BaseMainRecord {
-  @Id()
+  @Id
   @Column(Number)
   public id: number
   
@@ -212,7 +213,8 @@ export class ManagerBill extends BaseMainRecord {
 
 @Entity("SignUpRequest")
 export class SignUpRequest extends BaseRecord {
-  @Nullable()
+  @Nullable
+  @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
   
@@ -225,7 +227,7 @@ export class SignUpRequest extends BaseRecord {
   @Column(String)
   name: string
   
-  @Nullable()
+  @Nullable
   @Column(Number)
   public status: number
 }
