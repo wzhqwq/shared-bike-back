@@ -1,4 +1,4 @@
-import * as crypto from "crypto"
+import crypto = require("crypto")
 import { CUSTOMER_USER, MAINTAINER_USER, PASSWORD_SALT, PASSWORD_SECRET } from "../constant/values"
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawUser, RawMaintainer, RawManager, RawCustomer } from "../entities/dto/RawUser"

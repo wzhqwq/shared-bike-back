@@ -1,6 +1,6 @@
-import { Connection, QueryOptions } from "mysql";
+import { Connection, PoolConnection, QueryOptions } from "mysql";
 import { CheckParam, checkProperty, lengthRestriction } from "../utils/body";
-import { query } from "../utils/db";
+import { query, redisClient } from "../utils/db";
 import "reflect-metadata"
 
 const columnsSym = Symbol()
@@ -10,6 +10,7 @@ export type EntityColumn = CheckParam<any> & {
   isPK: boolean
   FK?: { tableName: string, key: string }
   c: { new (...args: any[]) }
+  visibility: number
 }
 export type EntityProperty = {
   column: EntityColumn
@@ -69,7 +70,7 @@ export function getTableName(target: Object) {
 }
 export const getProperties = (target: Object) => Reflect.get(target, 'properties') as EntityProperty[]
 
-abstract class BaseDb<TEntity extends Object> {
+abstract class BaseDb<TEntity extends Object, TCondition = TEntity> {
   constructor(
     private connection?: Connection,
   ) { }
@@ -78,10 +79,10 @@ abstract class BaseDb<TEntity extends Object> {
     return query<RowT>(sql, values, this.connection)
   }
   
-  public async pullBySearching(conditions: ConditionType<any>[]){
+  public async pullBySearching(conditions: ConditionType<TCondition>[]){
     return (await this.list(conditions))[0]
   }
-  abstract list(conditions?: ConditionType<any>[], limit?: number): Promise<TEntity[]>
+  abstract list(conditions?: ConditionType<TCondition>[], columns?: (keyof TCondition)[], limit?: number): Promise<TEntity[]>
 }
 
 type TableInfo<TEntity extends Object> = [string, any[], { new (...args: any[]): TEntity }]
@@ -116,13 +117,17 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     modifiedKeys.forEach(k => { k.modified = false })
   }
 
-  public async list(conditions: ConditionType<TEntity>[] = [], limit?: number) {
+  public async list(
+    conditions: ConditionType<TEntity>[] = [],
+    columns?: (keyof TEntity)[],
+    limit?: number,
+  ) {
     let tableName = getTableName(new this.c())
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return (await this.query<any>(
-      "SELECT * FROM ??" + (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
-      [tableName, ...additionalValues],
+      "SELECT ?? FROM ??" + (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
+      [columns ?? '*', tableName, ...additionalValues],
     )).map(o => {
       let entity = new this.c()
       let properties = getProperties(entity)
@@ -145,7 +150,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
   }
 }
 
-export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseDb<[TLeft, TRight]> {
+export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseDb<[TLeft, TRight], TLeft & TRight> {
   constructor(
     private leftTable: TableInfo<TLeft>,
     private rightTable: TableInfo<TRight>,
@@ -154,7 +159,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     super(connection)
   }
 
-  public async list(conditions: ConditionType<TLeft | TRight>[] = [], limit?: number) {
+  public async list(conditions: ConditionType<TLeft & TRight>[] = [], columns?: (keyof (TLeft & TRight))[], limit?: number) {
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     let LeftC = this.leftTable[2], RightC = this.rightTable[2]
@@ -165,13 +170,16 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     let leftId = e.key, rightId = e.FK.key
 
     let q: QueryOptions = {
-      sql: `SELECT * FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
+      sql: `SELECT ?? FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
         (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
       nestTables: true
     }
-    return (await this.query(q,
-      [...this.leftTable[1], ...this.rightTable[1], leftId, rightId, ...additionalValues],
-    )).map<[TLeft, TRight]>(o => {
+    return (await this.query(q, [
+      columns ?? '*',
+      ...this.leftTable[1], ...this.rightTable[1],
+      leftId, rightId,
+      ...additionalValues,
+    ])).map<[TLeft, TRight]>(o => {
       let left = new LeftC(), right = new RightC()
       let leftProperties = getProperties(left)
       let rightProperties = getProperties(right)
@@ -184,26 +192,65 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 
 export type OperatorType = '=' | '>' | '<' | '>=' | '<=' | '<>'
 export type AggregationFnType = 'COUNT' | 'SUM' | 'AVG'
-export type ConditionKeyType<TEntity extends Object> = keyof TEntity | { fn: AggregationFnType, key: keyof TEntity | '*' }
-export type ConditionType<TEntity extends Object> = [ConditionKeyType<TEntity>, OperatorType, any]
+export type ConditionKeyType<TEntity extends Object> =
+  keyof TEntity | { fn: AggregationFnType, key: keyof TEntity | '*' }
+export type ConditionType<TEntity extends Object> =
+  [ConditionKeyType<TEntity>, OperatorType, number | string] |
+  [ConditionKeyType<TEntity>, 'BETWEEN', (number | string)[]]
+
 function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntity>[]): [string, any[]] {
-  let sql = conditions.map(c => `?? ${c[1]} ?`).join(' AND ')
+  let sql = conditions.map(c => `?? ${c[1]} ${c[1] === 'BETWEEN' ? '? AND ?' : '?'}`).join(' AND ')
   let values = conditions.flatMap(c => [
     typeof c[0] === 'object' ? `${c[0].fn}(${c[0].key.toString()})` : c[0].toString(),
-    c[2]
+    ...(c[1] === 'BETWEEN' ? c[2] : [c[2]]),
   ])
   return [sql, values]
 }
 
 type SupportedConstructor = NumberConstructor | StringConstructor | DateConstructor
 
-export function Column(type: SupportedConstructor) {
+export class RedisDbEntity<TEntity extends (Object & { id: number })> {
+  private db: DbEntity<TEntity>
+  private prefix: string
+  constructor (
+    private C: { new(...args: any[]): TEntity },
+    private fetchKey: keyof TEntity = 'id',
+    connection?: PoolConnection,
+  ) {
+    this.db = new DbEntity(C, connection)
+    this.prefix = 'bike__' + getTableName(new C()) + '__'
+  }
+
+  public async get(keyword: any) {
+    let result = await redisClient.getEx(this.prefix + keyword, { EX: 60 })
+    if (!result) return await this.db.pullBySearching([[this.fetchKey, '=', keyword]])
+    let o = JSON.parse(result)
+    let entity = new this.C()
+    let properties = getProperties(entity)
+    properties.forEach(k => k.value = o[k.column.key])
+    return entity
+  }
+
+  public save(entity: TEntity) {
+    return Promise.all([
+      this.db.save(entity),
+      redisClient.setEx(this.prefix + entity[this.fetchKey], 60, JSON.stringify(entity)),
+    ])
+  }
+
+  public async removeCache(keyword: any) {
+    await redisClient.del(this.prefix + keyword)
+  }
+}
+
+export function Column(type: SupportedConstructor, visibility: number = 0) {
   return function (target: Object, key: string) {
     getColumns(target).push({
       key,
       restrictions: [type === Number ? "number" : "string"],
       isPK: false,
-      c: type
+      c: type,
+      visibility,
     })
   }
 }

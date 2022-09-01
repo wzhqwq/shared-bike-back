@@ -105,4 +105,4 @@ export async function transactionWrapper<T>(name: string, fn: (connection: PoolC
 
 export const redisClient = createClient()
 
-// redisClient.connect()
+redisClient.connect()

@@ -1,11 +1,12 @@
-import * as Application from "koa"
-import * as Router from "@koa/router"
-import * as log4js from "log4js"
+import Application = require("koa")
+import Router = require("@koa/router")
+import log4js = require("log4js")
 import authRouter from "./routes/authRouter"
 import { jwtMiddleware } from "./utils/auth"
 import Result from "./entities/vo/Result"
-import { MysqlError } from "mysql"
-import { LogicalError, PermissionError } from "./utils/errors"
+import body = require("koa-body")
+import cors = require("@koa/cors")
+import customerRouter from "./routes/customerRoute"
 
 log4js.configure({
   appenders: {
@@ -45,6 +46,7 @@ app.use((ctx, next) =>
     }
   })
 )
+app.use(cors({ origin: "*" }))
 app.use(jwtMiddleware.unless({ path: ['/auth/sign_in', '/auth/sign_up'] }))
 
 let root = new Router()
@@ -52,7 +54,9 @@ root.get("/", async ctx => {
   ctx.body = "テスト、テスト"
 })
 root.use("/auth", authRouter.routes())
+root.use("/customer", customerRouter.routes())
 
+app.use(body())
 app.use(root.routes())
 
 app.listen(80, () => {

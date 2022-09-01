@@ -1,7 +1,8 @@
+import { MAINTAINER_USER } from "../../constant/values"
 import { Column, Entity, Foreign, Id, Nullable } from "../entity"
 
 @Entity("BikeSeries")
-class BikeSeries {
+export class BikeSeries {
   @Id
   @Nullable
   @Column(Number)
@@ -25,7 +26,7 @@ export class RawBike {
   public id: number
   
   @Foreign(BikeSeries, "id")
-  @Column(Number)
+  @Column(Number, MAINTAINER_USER)
   public series_id: number
   
   @Column(Number)
@@ -37,16 +38,19 @@ export class RawBike {
   @Column(Number)
   public status: number
   
-  @Column(Number)
+  @Column(Number, MAINTAINER_USER)
   public mileage: number
   
   @Column(Number)
   public health: number
   
-  @Column(Number)
+  @Column(Number, MAINTAINER_USER)
   public parking_section_id: number
   
-  @Column(Number)
+  @Column(Number, MAINTAINER_USER)
   public parking_point_id: number
+
+  @Column(String, 10)
+  public token: string
 }
 

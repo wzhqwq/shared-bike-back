@@ -1,5 +1,8 @@
 import { Column, Entity, Foreign, Id, Nullable } from "../entity"
-import { RawUser } from "./RawUser"
+import { RawBike } from "./RawBike"
+import { RawMalfunction } from "./RawMalfunction"
+import { RawSouvenir } from "./RawSouvenir"
+import { RawCustomer, RawMaintainer, RawManager, RawUser } from "./RawUser"
 
 class BaseRecord {
   @Id
@@ -13,12 +16,15 @@ class BaseRecord {
 @Entity("RideRecord")
 export class RideRecord {
   @Id
+  @Nullable
   @Column(Number)
   public id: number
   
+  @Foreign(RawBike, 'id')
   @Column(Number)
   public bike_id: number
   
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
   
@@ -28,6 +34,7 @@ export class RideRecord {
   @Column(Date)
   public start_time: Date
   
+  @Nullable
   @Column(Date)
   public end_time: Date
   
@@ -40,10 +47,15 @@ export class RideRecord {
 
 @Entity("MalfunctionRecord")
 export class MalfunctionRecord extends BaseRecord {
+  @Foreign(RawBike, 'id')
+  @Column(Number)
+  public bike_id: number
   
+  @Foreign(RideRecord, 'id')
   @Column(Number)
   public ride_id: number
   
+  @Foreign(RawMalfunction, 'id')
   @Column(Number)
   public malfunction_id: number
   
@@ -51,10 +63,10 @@ export class MalfunctionRecord extends BaseRecord {
   public degree: number
   
   @Column(String)
-  description: string
+  public description: string
   
   @Column(String)
-  image_url: string
+  public image_url: string
   
   @Column(Number)
   public status: number
@@ -62,10 +74,11 @@ export class MalfunctionRecord extends BaseRecord {
 
 @Entity("RepairRecord")
 export class RepairRecord extends BaseRecord {
-  
+  @Foreign(MalfunctionRecord, 'id')
   @Column(Number)
   public malfunction_r_id: number
   
+  @Foreign(RawMaintainer, 'user_id')
   @Column(Number)
   public maintainer_id: number
   
@@ -75,7 +88,7 @@ export class RepairRecord extends BaseRecord {
 
 @Entity("RechargeRecord")
 export class RechargeRecord extends BaseRecord {
-  
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
   
@@ -85,7 +98,7 @@ export class RechargeRecord extends BaseRecord {
 
 @Entity("PunishRecord")
 export class PunishRecord extends BaseRecord {
-  
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
   
@@ -93,15 +106,16 @@ export class PunishRecord extends BaseRecord {
   public points_deducted: number
   
   @Column(String)
-  reason: string
+  public reason: string
 }
 
 @Entity("ExchangeRecord")
 export class ExchangeRecord extends BaseRecord {
-  
+  @Foreign(RawSouvenir, 'id')
   @Column(Number)
   public souvenir_id: number
   
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
   
@@ -117,15 +131,16 @@ export class ExchangeRecord extends BaseRecord {
 
 @Entity("DestroyRecord")
 export class DestroyRecord extends BaseRecord {
-  
+  @Foreign(RawBike, 'id')
   @Column(Number)
   public bike_id: number
   
+  @Foreign(RawManager, 'user_id')
   @Column(Number)
   public manager_id: number
   
   @Column(String)
-  reason: string
+  public reason: string
 }
 
 // bills
@@ -140,13 +155,14 @@ class BaseBill {
   @Column(Number)
   public expense: number
   
+  @Foreign(RawManager, 'user_id')
   @Column(Number)
   public manager_id: number
 }
 
 @Entity("BikeBill")
 export class BikeBill extends BaseBill {
-  
+  @Foreign(RawBike, 'id')
   @Column(Number)
   public bike_id: number
   
@@ -156,7 +172,7 @@ export class BikeBill extends BaseBill {
 
 @Entity("SouvenirBill")
 export class SouvenirBill extends BaseBill {
-  
+  @Foreign(RawSouvenir, 'id')
   @Column(Number)
   public souvenir_id: number
   
@@ -166,9 +182,8 @@ export class SouvenirBill extends BaseBill {
 
 @Entity("OtherBill")
 export class OtherBill extends BaseBill {
-  
   @Column(String)
-  reason: string
+  public reason: string
 }
 
 // main records
@@ -192,21 +207,21 @@ class BaseMainRecord {
 
 @Entity("DepositRecord")
 export class DepositRecord extends BaseMainRecord {
-  
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
 }
 
 @Entity("PointRecord")
 export class PointRecord extends BaseMainRecord {
-  
+  @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
 }
 
 @Entity("ManagerBill")
 export class ManagerBill extends BaseMainRecord {
-  
+  @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
 }
@@ -222,10 +237,10 @@ export class SignUpRequest extends BaseRecord {
   public type: number
   
   @Column(String)
-  phone: string
+  public phone: string
   
   @Column(String)
-  name: string
+  public name: string
   
   @Nullable
   @Column(Number)
