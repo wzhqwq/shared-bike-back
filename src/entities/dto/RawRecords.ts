@@ -1,6 +1,6 @@
-import { Column, Entity, Foreign, Id, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable, Restriction } from "../entity"
 import { RawBike } from "./RawBike"
-import { RawMalfunction } from "./RawMalfunction"
+import { Malfunction } from "./Malfunction"
 import { RawSouvenir } from "./RawSouvenir"
 import { RawCustomer, RawMaintainer, RawManager, RawUser } from "./RawUser"
 
@@ -38,8 +38,8 @@ export class RideRecord {
   @Column(Date)
   public end_time: Date
   
-  @Column(Number)
-  public charge: number
+  @Column(String)
+  public charge: string
   
   @Column(Number)
   public points_acquired: number
@@ -48,40 +48,51 @@ export class RideRecord {
 @Entity("MalfunctionRecord")
 export class MalfunctionRecord extends BaseRecord {
   @Foreign(RawBike, 'id')
+  @Nullable
   @Column(Number)
   public bike_id: number
   
   @Foreign(RideRecord, 'id')
+  @Nullable
   @Column(Number)
   public ride_id: number
   
-  @Foreign(RawMalfunction, 'id')
+  @Foreign(Malfunction, 'id')
   @Column(Number)
   public malfunction_id: number
   
+  @Restriction(c => [1, 2, 3, 10].includes(c) ? '' : '应为1、2、3或10')
   @Column(Number)
   public degree: number
   
   @Column(String)
   public description: string
   
+  @Nullable
   @Column(String)
-  public image_url: string
+  public image_key: string
   
+  @Restriction(c => [0, 1, 2, 3].includes(c) ? '' : '应为0、1、2或3')
   @Column(Number)
   public status: number
 }
 
 @Entity("RepairRecord")
 export class RepairRecord extends BaseRecord {
-  @Foreign(MalfunctionRecord, 'id')
+  @Foreign(RawBike, 'id')
   @Column(Number)
-  public malfunction_r_id: number
+  public bike_id: number
+
+  @Foreign(Malfunction, 'id')
+  @Column(Number)
+  public malfunction_id: number
   
   @Foreign(RawMaintainer, 'user_id')
+  @Nullable
   @Column(Number)
   public maintainer_id: number
   
+  @Restriction(c => [0, 1, 2].includes(c) ? '' : '应为0、1或2')
   @Column(Number)
   public conclusion: number
 }
@@ -92,8 +103,8 @@ export class RechargeRecord extends BaseRecord {
   @Column(Number)
   public customer_id: number
   
-  @Column(Number)
-  public amount: number
+  @Column(String)
+  public amount: string
 }
 
 @Entity("PunishRecord")
@@ -152,8 +163,8 @@ class BaseBill {
   @Column(Date)
   public time: Date
   
-  @Column(Number)
-  public expense: number
+  @Column(String)
+  public expense: string
   
   @Foreign(RawManager, 'user_id')
   @Column(Number)
@@ -195,8 +206,8 @@ class BaseMainRecord {
   @Column(Date)
   public time: Date
   
-  @Column(Number)
-  public change: number
+  @Column(String)
+  public change: string
   
   @Column(Number)
   public type: number

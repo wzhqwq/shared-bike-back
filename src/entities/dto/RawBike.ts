@@ -29,11 +29,11 @@ export class RawBike {
   @Column(Number, MAINTAINER_USER)
   public series_id: number
   
-  @Column(Number)
-  public p_longitude: number
+  @Column(String)
+  public p_longitude: string
   
-  @Column(Number)
-  public p_latitude: number
+  @Column(String)
+  public p_latitude: string
   
   @Column(Number)
   public status: number
@@ -44,9 +44,11 @@ export class RawBike {
   @Column(Number)
   public health: number
   
+  @Nullable
   @Column(Number, MAINTAINER_USER)
   public parking_section_id: number
   
+  @Nullable
   @Column(Number, MAINTAINER_USER)
   public parking_point_id: number
 

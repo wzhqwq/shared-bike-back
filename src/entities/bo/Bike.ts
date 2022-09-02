@@ -1,14 +1,19 @@
-import { PoolConnection } from "mysql";
-import { BIKE_AVAILABLE, BIKE_OCCUPIED } from "../../constant/values";
-import { bikeComm } from "../../utils/auth";
-import { LogicalError } from "../../utils/errors";
-import { RawBike } from "../dto/RawBike";
-import { RawMalfunction } from "../dto/RawMalfunction";
-import { MalfunctionRecord, RideRecord } from "../dto/RawRecords";
-import { DbEntity, DbJoined, RedisDbEntity } from "../entity";
+import { PoolConnection } from "mysql"
+import { BIKE_AVAILABLE, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, EXPAND_RATE, REPAIR_FAILED } from "../../constant/values"
+import { bikeComm } from "../../utils/auth"
+import { LogicalError } from "../../utils/errors"
+import { RawBike } from "../dto/RawBike"
+import { Malfunction } from "../dto/Malfunction"
+import { ParkingPoint } from "../dto/ParkingPoint"
+import { MalfunctionRecord, RideRecord } from "../dto/RawRecords"
+import { Section } from "../dto/Section"
+import { DbEntity, DbJoined, RedisDbEntity } from "../entity"
+import { getConfigValue } from "../../utils/cache"
+
+export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
 
 export class Bike {
-  private raw: RawBike
+  public raw: RawBike
   private bikeDb: RedisDbEntity<RawBike>
   constructor(private connection: PoolConnection) {
     this.bikeDb = new RedisDbEntity(RawBike, 'id', connection)
@@ -18,6 +23,16 @@ export class Bike {
     this.raw = await this.bikeDb.get(id)
     if (!this.raw) throw new LogicalError("单车不存在")
     return this
+  }
+
+  public async newBike(seriesId: number, posLongitude: string, posLatitude: string) {
+    this.raw = new RawBike()
+    this.raw.series_id = seriesId
+    this.raw.p_longitude = posLongitude
+    this.raw.p_latitude = posLatitude
+    this.raw.status = BIKE_UNAVAILABLE
+    await this.bikeDb.save(this.raw)
+    return this.raw.id
   }
 
   public async unlock(s: string) {
@@ -38,8 +53,8 @@ export class Bike {
     let result = bikeComm.decrypt(s)
     if (result.length !== 5) throw new LogicalError("数据同步失败")
     let token = result[0], status = parseInt(result[1]), mileage = parseFloat(result[2]),
-      posLongitude = parseFloat(result[3]), posLatitude = parseFloat(result[4])
-    if (isNaN(status) || isNaN(mileage) || isNaN(posLongitude) || isNaN(posLatitude))
+      posLongitude = result[3], posLatitude = result[4]
+    if (isNaN(status) || isNaN(mileage) || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
       throw new LogicalError("同步数据格式错误")
     if (this.raw.token !== token) throw new LogicalError("数据同步失败")
 
@@ -51,6 +66,8 @@ export class Bike {
       record.start_time = new Date()
       record.customer_id = userId
       record.mileage = mileage
+
+      await this.update(status, posLongitude, posLatitude)
       await recordDb.save(record)
       return bikeComm.encrypt([record.id.toString()])
     }
@@ -58,56 +75,98 @@ export class Bike {
       let record = await recordDb.get(this.raw.id)
       if (!record) throw new LogicalError("查询记录失败")
       record.mileage = mileage
-      this.raw.p_latitude = posLatitude
-      this.raw.p_longitude = posLongitude
+      let duration = (new Date().valueOf() - record.start_time.valueOf()) / 1000
+      let charge = await this.calculateCharge(duration, mileage)
       if (status === BIKE_AVAILABLE) {
         // 关锁成功
         record.end_time = new Date()
-        let duration = (record.end_time.valueOf() - record.start_time.valueOf()) / 1000
-        // 计价
-        this.update(status)
+        record.charge = charge.toFixed(2)
       }
+
+      await this.update(status, posLongitude, posLatitude)
       await recordDb.save(record)
-      await this.bikeDb.save(this.raw)
-      return ""
+      return `${duration.toFixed(0)},${charge.toFixed(2)}`
     }
+    throw new LogicalError("无效更新操作")
   }
 
-  public async update(status: number) {
+  public async update(status: number, posLongitude?: string, posLatitude?: string) {
     this.raw.status = status
+    if (posLongitude)
+      this.raw.p_longitude = posLongitude
+    else
+      posLongitude = this.raw.p_longitude
+    if (posLatitude)
+      this.raw.p_latitude = posLatitude
+    else
+      posLatitude = this.raw.p_latitude
+
     if (status === BIKE_AVAILABLE) {
-      let recordDb = new DbEntity(MalfunctionRecord)
-      let malfunctionDb = new DbEntity(RawMalfunction)
+      let sectionDb = new DbEntity(Section)
+      let ppDb = new DbEntity(ParkingPoint)
+      let section = await sectionDb.pullBySearching([
+        [posLongitude, 'BETWEEN', [['bl_longitude'], ['tr_longitude']]],
+        [posLatitude, 'BETWEEN', [['bl_latitude'], ['tr_latitude']]],
+      ])
+      let pp = await ppDb.pullBySearching([
+        [posLongitude, 'BETWEEN', [
+          [['p_longitude'], '-', [['bikes_count'], '*', EXPAND_RATE]],
+          [['p_longitude'], '+', [['bikes_count'], '*', EXPAND_RATE]],
+        ]],
+        [posLatitude, 'BETWEEN', [
+          [['p_latitude'], '-', [['bikes_count'], '*', EXPAND_RATE]],
+          [['p_latitude'], '+', [['bikes_count'], '*', EXPAND_RATE]],
+        ]],
+      ])
 
-      let records = await new DbJoined(
-        recordDb.asTable([['bike_id', '=', this.raw.id]]),
-        malfunctionDb.asTable(),
-        this.connection
-      ).list([], ['degree', 'damage_degree', 'malfunction_id'])
-      
-      let map = new Map<number, { degree: number[], multiplier: number }>()
-      records.forEach(([r, m]) => {
-        let list = map.get(r.malfunction_id)?.degree
-        if (!list) {
-          list = []
-          map.set(r.malfunction_id, { degree: list, multiplier: m.damage_degree })
-        }
-        list.push(r.degree)
-      })
-
-      let health = 100
-      map.forEach(({ degree, multiplier }) => {
-        if (degree.length < 3) return
-        let avgDegree = degree.sort().slice(1, -2).reduce((a, b) => a + b) / (degree.length - 2)
-        health -= avgDegree * multiplier
-      })
-      
-      this.raw.health = Math.floor(health)
+      this.raw.parking_point_id = pp?.id ?? null
+      this.raw.parking_section_id = section?.id ?? null
+      this.raw.health = await this.calculateHealth()
     }
     await this.bikeDb.save(this.raw)
   }
 
-  public async finishFixing() {
-    await this.update(BIKE_AVAILABLE)
+  public async finishFixing(posLongitude: string, posLatitude: string) {
+    await this.update(BIKE_AVAILABLE, posLongitude, posLatitude)
+  }
+
+  public async calculateHealth() {
+    let recordDb = new DbEntity(MalfunctionRecord)
+    let malfunctionDb = new DbEntity(Malfunction)
+
+    let records = await new DbJoined(
+      recordDb.asTable([[['bike_id'], '=', this.raw.id], [['status'], '<=', REPAIR_FAILED]]),
+      malfunctionDb.asTable(),
+      this.connection
+    ).list([], ['degree', 'damage_degree', 'malfunction_id'])
+
+    let map = new Map<number, { degree: number[], multiplier: number }>()
+    records.forEach(([r, m]) => {
+      let list = map.get(r.malfunction_id)?.degree
+      if (!list) {
+        list = []
+        map.set(r.malfunction_id, { degree: list, multiplier: m.damage_degree })
+      }
+      list.push(r.degree)
+    })
+
+    let health = 100
+    map.forEach(({ degree, multiplier }) => {
+      if (degree.length < 3) return
+      let sortedDegrees = degree.sort((a, b) => b - a)  // 降序排序
+      let avgDegree = sortedDegrees[0] === 10 ? 10 :    // 若出现致命故障直接扣大分
+        sortedDegrees.slice(1, -2).reduce((a, b) => a + b) / (degree.length - 2)  // 否则去掉最高分最低分求平均
+      health -= avgDegree * multiplier
+    })
+    
+    return Math.floor(health)
+  }
+
+  public async calculateCharge(duration: number, milage: number) {
+    if (
+      duration < await getConfigValue(CONFIG_CHARGE_MIN_SECONDS) ||
+      milage < await getConfigValue(CONFIG_CHARGE_MIN_MILAGE)
+    ) return 0
+    return duration * CONFIG_CHARGE_PER_MINUTE / 60
   }
 }

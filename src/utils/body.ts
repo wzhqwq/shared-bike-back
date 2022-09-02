@@ -59,6 +59,27 @@ export function checkBodyAsEntity<T extends Object>(C: { new (...args: any[]): T
   }
 }
 
+export function checkBodyAsEntityList<T extends Object>(C: { new (...args: any[]): T }): Router.Middleware {
+  return async (ctx, next) => {
+    let list = ctx.request.body
+    try {
+      if (!(list instanceof Array)) throw new Error("应提供数组")
+      ctx.request.body = list.map(o => {
+        let entity = new C()
+        let params = getColumns(entity)
+        params.forEach(param => entity[param.key] = o[param.key])
+        return entity
+      })
+    }
+    catch (e) {
+      ctx.status = 400
+      ctx.body = e.message
+      return
+    }
+    await next()
+  }
+}
+
 export function lengthRestriction(min: number = 1, max: number = 20) {
   return (o: String) => o.length < min ? `长度不应小于${min}` : (o.length > max ? `长度不应大于${max}` : '')
 }

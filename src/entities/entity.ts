@@ -108,6 +108,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
       id.value = insertId
     }
     else {
+      modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
       await query<null>(
         "UPDATE ?? SET ? WHERE ?? = ?",
         [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
@@ -115,6 +116,35 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
       )
     }
     modifiedKeys.forEach(k => { k.modified = false })
+  }
+
+  public async update(change: TEntity, conditions: ConditionType<TEntity>[]) {
+    if (!conditions.length) throw new Error("怎么能不加条件呢")
+
+    let properties = getProperties(change)
+    let tableName = getTableName(change)
+
+    let [whereClause, additionalValues] = parseCondition(conditions)
+    let modifiedKeys = properties.filter(k => k.modified && !k.column.isPK)
+
+    return (await query<null>(
+      "UPDATE ?? SET ? WHERE " + whereClause,
+      [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
+        ...additionalValues
+      ]
+    )).affectedRows
+  }
+
+  public async delete(conditions: ConditionType<TEntity>[]) {
+    if (!conditions.length) throw new Error("怎么能不加条件呢")
+
+    let tableName = getTableName(new this.c())
+    let [whereClause, additionalValues] = parseCondition(conditions)
+
+    return (await this.query<any>(
+      "DELETE FROM ?? WHERE " + whereClause,
+      [tableName, ...additionalValues]
+    )).affectedRows
   }
 
   public async list(
@@ -125,7 +155,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let tableName = getTableName(new this.c())
     let [whereClause, additionalValues] = parseCondition(conditions)
 
-    return (await this.query<any>(
+    return (await this.query<TEntity>(
       "SELECT ?? FROM ??" + (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
       [columns ?? '*', tableName, ...additionalValues],
     )).map(o => {
@@ -161,6 +191,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 
   public async list(conditions: ConditionType<TLeft & TRight>[] = [], columns?: (keyof (TLeft & TRight))[], limit?: number) {
     let [whereClause, additionalValues] = parseCondition(conditions)
+    // LeftC.prototype
 
     let LeftC = this.leftTable[2], RightC = this.rightTable[2]
     let leftTableName = getTableName(new LeftC()), rightTableName = getTableName(new RightC())
@@ -190,21 +221,44 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
   }
 }
 
-export type OperatorType = '=' | '>' | '<' | '>=' | '<=' | '<>'
+export type BooleanOperatorType = '=' | '>' | '<' | '>=' | '<=' | '<>' | 'IS' | 'IS NOT'
+export type CalculatingOperatorType = '+' | '-' | '*' | '/'
 export type AggregationFnType = 'COUNT' | 'SUM' | 'AVG'
-export type ConditionKeyType<TEntity extends Object> =
-  keyof TEntity | { fn: AggregationFnType, key: keyof TEntity | '*' }
+export type ExpressionType<TEntity extends Object> = [keyof TEntity] | number | string |
+  { fn: AggregationFnType, key: ExpressionType<TEntity> | '*' } |
+  [ExpressionType<TEntity>, CalculatingOperatorType, ExpressionType<TEntity>]
+
 export type ConditionType<TEntity extends Object> =
-  [ConditionKeyType<TEntity>, OperatorType, number | string] |
-  [ConditionKeyType<TEntity>, 'BETWEEN', (number | string)[]]
+  [ExpressionType<TEntity>, BooleanOperatorType, ExpressionType<TEntity>] |
+  [ExpressionType<TEntity>, 'BETWEEN', (ExpressionType<TEntity>)[]]
 
 function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntity>[]): [string, any[]] {
-  let sql = conditions.map(c => `?? ${c[1]} ${c[1] === 'BETWEEN' ? '? AND ?' : '?'}`).join(' AND ')
-  let values = conditions.flatMap(c => [
-    typeof c[0] === 'object' ? `${c[0].fn}(${c[0].key.toString()})` : c[0].toString(),
-    ...(c[1] === 'BETWEEN' ? c[2] : [c[2]]),
-  ])
-  return [sql, values]
+  // let sql = conditions.map(c => `?? ${c[1]} ${c[1] === 'BETWEEN' ? '? AND ?' : '?'}`).join(' AND ')
+  // let values = conditions.flatMap(c => [
+  //   typeof c[0] === 'object' ? `${c[0].fn}(${c[0].key.toString()})` : c[0].toString(),
+  //   ...(c[1] === 'BETWEEN' ? c[2] : [c[2]]),
+  // ])
+  // return [sql, values]
+  let sql: string[] = [], values: any[] = []
+  conditions.forEach(c => {
+    let l = parseExpression(c[0]);
+    let r = (c[1] === 'BETWEEN' ? c[2] : [c[2]]).map(e => parseExpression(e))
+    sql.push(`${l[0]} ${c[1]} ${r.map(l => l[0]).join(' AND ')}`)
+    values.push(l[0], ...r.map(l => l[1]))
+  })
+  return [sql.join(' AND '), values]
+}
+function parseExpression<TEntity extends Object>(expression: ExpressionType<TEntity>): [string, any[]] {
+  if (expression instanceof Array) {
+    if (expression.length == 1) return ['??', [expression]]
+    let l = parseExpression(expression[0])
+    let r = parseExpression(expression[2])
+    return [`(${l[0]} ${expression[1]} ${r[0]})`, [...l[1], ...r[1]]]
+  }
+  if (typeof expression == 'object') {
+    return [`${expression.fn}(${expression.key.toString()})`, [expression.key.toString()]]
+  }
+  return ['?', [expression]]
 }
 
 type SupportedConstructor = NumberConstructor | StringConstructor | DateConstructor
@@ -223,7 +277,7 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
 
   public async get(keyword: any) {
     let result = await redisClient.getEx(this.prefix + keyword, { EX: 60 })
-    if (!result) return await this.db.pullBySearching([[this.fetchKey, '=', keyword]])
+    if (!result) return await this.db.pullBySearching([[[this.fetchKey], '=', keyword]])
     let o = JSON.parse(result)
     let entity = new this.C()
     let properties = getProperties(entity)
