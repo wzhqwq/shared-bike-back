@@ -1,10 +1,9 @@
-import { Column, Entity, Foreign, Id, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Length, Nullable } from "../entity"
 import { RawMaintainer } from "./RawUser"
 
 @Entity("Section")
 export class Section {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   
@@ -19,12 +18,15 @@ export class Section {
   
   @Column(String)
   public bl_latitude: string
+
+  @Column(String)
+  @Length()
+  public name: string
 }
 
 @Entity("MaintainerSection")
 export class MaintainerSection {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
 

@@ -3,7 +3,6 @@ import { Column, Entity, Id, Nullable } from "../entity"
 @Entity("Souvenir")
 export class RawSouvenir {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   

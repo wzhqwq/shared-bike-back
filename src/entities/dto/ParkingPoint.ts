@@ -1,9 +1,9 @@
-import { Column, Entity, Id, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable } from "../entity"
+import { Section } from "./Section"
 
 @Entity('ParkingPoint')
 export class ParkingPoint {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   
@@ -20,4 +20,9 @@ export class ParkingPoint {
   @Nullable
   @Column(Number)
   public minimum_count: number
+
+  @Nullable
+  @Foreign(Section, 'id')
+  @Column(Number)
+  public section_id: number
 }

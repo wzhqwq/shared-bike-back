@@ -1,15 +1,22 @@
 import Router = require("@koa/router")
 import { EntityColumn, getColumns } from "../entities/entity"
 
-type BuiltInRestriction = "string" | "number" | "integer"
+type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geological" | "price"
+
+export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
+export const priceDecimal = /^\d{,8}\.\d{2}$/
 
 const allRestrictions: { [key in BuiltInRestriction]: (o: any) => string } = {
   string: o => typeof o === "string" ? '' : '应为字符串',
   number: o => typeof o === "number" ? '' : '应为数字',
-  integer: o => typeof o === "number" && Number.isInteger(o) ? '' : '应为整数'
+  integer: o => Number.isInteger(o) ? '' : '应为整数',
+  positive: o => o > 0 ? '' : '应为正数',
+  geological: o => posDecimal.test(o) ? '' : '小数位错误',
+  price: o => priceDecimal.test(o) ? '' : '小数位错误'
 }
 
-export type CheckParam<T> = { key: keyof T, restrictions: (BuiltInRestriction | ((o: any) => string))[], nullable?: boolean }
+export type Restriction = (BuiltInRestriction | ((o: any) => string))
+export type CheckParam<T> = { key: keyof T, restrictions: Restriction[], nullable?: boolean, readonly?: boolean }
 
 export function checkBody<T>(params: CheckParam<T>[]): Router.Middleware {
   return async (ctx, next) => {
@@ -35,6 +42,8 @@ export function checkProperty(param: CheckParam<any>, value: any) {
     if (param.nullable) return
     throw new Error(`字段${param.key.toString()}未提供`)
   }
+  else if (param.readonly) throw new Error(`不可以设置字段${param.key.toString()}`)
+  
   let errors = param.restrictions
     .map(r => typeof r === "string" ? allRestrictions[r](value) : r(value))
     .filter(Boolean)

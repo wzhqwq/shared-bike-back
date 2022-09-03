@@ -1,5 +1,5 @@
-import { Column, Entity, Foreign, Id, Nullable, Restriction } from "../entity"
-import { RawBike } from "./RawBike"
+import { Column, Entity, Foreign, Id, Length, Nullable, Readonly, Restriction } from "../entity"
+import { BikeSeries, RawBike } from "./RawBike"
 import { Malfunction } from "./Malfunction"
 import { RawSouvenir } from "./RawSouvenir"
 import { RawCustomer, RawMaintainer, RawManager, RawUser } from "./RawUser"
@@ -9,6 +9,8 @@ class BaseRecord {
   @Column(Number)
   public id: number
   
+  @Nullable
+  @Readonly
   @Column(Date)
   public time: Date
 }
@@ -16,7 +18,6 @@ class BaseRecord {
 @Entity("RideRecord")
 export class RideRecord {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   
@@ -25,9 +26,11 @@ export class RideRecord {
   public bike_id: number
   
   @Foreign(RawCustomer, 'user_id')
+  @Nullable
   @Column(Number)
   public customer_id: number
   
+  @Restriction('positive')
   @Column(Number)
   public mileage: number
   
@@ -38,9 +41,11 @@ export class RideRecord {
   @Column(Date)
   public end_time: Date
   
+  @Restriction('price')
   @Column(String)
   public charge: string
   
+  @Restriction('integer', 'positive')
   @Column(Number)
   public points_acquired: number
 }
@@ -53,7 +58,6 @@ export class MalfunctionRecord extends BaseRecord {
   public bike_id: number
   
   @Foreign(RideRecord, 'id')
-  @Nullable
   @Column(Number)
   public ride_id: number
   
@@ -66,10 +70,12 @@ export class MalfunctionRecord extends BaseRecord {
   public degree: number
   
   @Column(String)
+  @Length(1, 50)
   public description: string
   
   @Nullable
   @Column(String)
+  @Length(1, 50)
   public image_key: string
   
   @Restriction(c => [0, 1, 2, 3].includes(c) ? '' : '应为0、1、2或3')
@@ -100,10 +106,12 @@ export class RepairRecord extends BaseRecord {
 @Entity("RechargeRecord")
 export class RechargeRecord extends BaseRecord {
   @Foreign(RawCustomer, 'user_id')
+  @Nullable
   @Column(Number)
   public customer_id: number
   
   @Column(String)
+  @Restriction('price')
   public amount: string
 }
 
@@ -114,9 +122,11 @@ export class PunishRecord extends BaseRecord {
   public customer_id: number
   
   @Column(Number)
+  @Restriction('integer', 'positive')
   public points_deducted: number
   
   @Column(String)
+  @Length()
   public reason: string
 }
 
@@ -128,16 +138,20 @@ export class ExchangeRecord extends BaseRecord {
   
   @Foreign(RawCustomer, 'user_id')
   @Column(Number)
+  @Nullable
   public customer_id: number
   
   @Column(Number)
+  @Restriction('integer', 'positive')
   public amount: number
   
   @Column(Number)
+  @Nullable
   public given: number
   
   @Column(Number)
-  public given_by?: number
+  @Nullable
+  public given_by: number
 }
 
 @Entity("DestroyRecord")
@@ -147,10 +161,12 @@ export class DestroyRecord extends BaseRecord {
   public bike_id: number
   
   @Foreign(RawManager, 'user_id')
+  @Nullable
   @Column(Number)
   public manager_id: number
   
   @Column(String)
+  @Length()
   public reason: string
 }
 
@@ -160,24 +176,28 @@ class BaseBill {
   @Column(Number)
   public id: number
   
+  @Readonly
   @Column(Date)
   public time: Date
   
   @Column(String)
+  @Restriction('price')
   public expense: string
   
   @Foreign(RawManager, 'user_id')
+  @Nullable
   @Column(Number)
   public manager_id: number
 }
 
 @Entity("BikeBill")
 export class BikeBill extends BaseBill {
-  @Foreign(RawBike, 'id')
+  @Foreign(BikeSeries, 'id')
   @Column(Number)
-  public bike_id: number
+  public series_id: number
   
   @Column(Number)
+  @Restriction('integer', 'positive')
   public amount: number
 }
 
@@ -188,12 +208,14 @@ export class SouvenirBill extends BaseBill {
   public souvenir_id: number
   
   @Column(Number)
+  @Restriction('integer', 'positive')
   public amount: number
 }
 
 @Entity("OtherBill")
 export class OtherBill extends BaseBill {
   @Column(String)
+  @Length()
   public reason: string
 }
 
@@ -205,9 +227,6 @@ class BaseMainRecord {
   
   @Column(Date)
   public time: Date
-  
-  @Column(String)
-  public change: string
   
   @Column(Number)
   public type: number
@@ -221,6 +240,10 @@ export class DepositRecord extends BaseMainRecord {
   @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
+  
+  @Column(String)
+  @Restriction('price')
+  public change: string
 }
 
 @Entity("PointRecord")
@@ -228,6 +251,10 @@ export class PointRecord extends BaseMainRecord {
   @Foreign(RawCustomer, 'user_id')
   @Column(Number)
   public customer_id: number
+  
+  @Column(Number)
+  @Restriction('integer', 'positive')
+  public change: number
 }
 
 @Entity("ManagerBill")
@@ -235,6 +262,10 @@ export class ManagerBill extends BaseMainRecord {
   @Foreign(RawUser, 'id')
   @Column(Number)
   public user_id: number
+  
+  @Column(String)
+  @Restriction('price')
+  public change: string
 }
 
 @Entity("SignUpRequest")
@@ -248,9 +279,11 @@ export class SignUpRequest extends BaseRecord {
   public type: number
   
   @Column(String)
+  @Length()
   public phone: string
   
   @Column(String)
+  @Length(1, 10)
   public name: string
   
   @Nullable

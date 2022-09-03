@@ -4,7 +4,6 @@ import { Column, Entity, Foreign, Id, Nullable } from "../entity"
 @Entity("BikeSeries")
 export class BikeSeries {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
 
@@ -21,7 +20,6 @@ export class BikeSeries {
 @Entity("Bike")
 export class RawBike {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   
@@ -35,7 +33,7 @@ export class RawBike {
   @Column(String)
   public p_latitude: string
   
-  @Column(Number)
+  @Column(Number, MAINTAINER_USER)
   public status: number
   
   @Column(Number, MAINTAINER_USER)

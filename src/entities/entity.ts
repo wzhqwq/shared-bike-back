@@ -1,5 +1,5 @@
 import { Connection, PoolConnection, QueryOptions } from "mysql";
-import { CheckParam, checkProperty, lengthRestriction } from "../utils/body";
+import { CheckParam, checkProperty, lengthRestriction, Restriction } from "../utils/body";
 import { query, redisClient } from "../utils/db";
 import "reflect-metadata"
 
@@ -79,10 +79,15 @@ abstract class BaseDb<TEntity extends Object, TCondition = TEntity> {
     return query<RowT>(sql, values, this.connection)
   }
   
-  public async pullBySearching(conditions: ConditionType<TCondition>[]){
+  public async pullBySearching(conditions: ConditionType<TCondition>[]): Promise<TEntity | undefined> {
     return (await this.list(conditions))[0]
   }
-  abstract list(conditions?: ConditionType<TCondition>[], columns?: (keyof TCondition)[], limit?: number): Promise<TEntity[]>
+  abstract list(
+    conditions?: ConditionType<TCondition>[],
+    columns?: (keyof TCondition)[],
+    limit?: number,
+    sort?: SortType<TCondition>,
+  ): Promise<TEntity[]>
 }
 
 type TableInfo<TEntity extends Object> = [string, any[], { new (...args: any[]): TEntity }]
@@ -118,18 +123,16 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     modifiedKeys.forEach(k => { k.modified = false })
   }
 
-  public async update(change: TEntity, conditions: ConditionType<TEntity>[]) {
+  public async update(changes: [keyof TEntity, ExpressionType<TEntity>][], conditions: ConditionType<TEntity>[]) {
     if (!conditions.length) throw new Error("怎么能不加条件呢")
 
-    let properties = getProperties(change)
-    let tableName = getTableName(change)
+    let tableName = getTableName(new this.c)
 
     let [whereClause, additionalValues] = parseCondition(conditions)
-    let modifiedKeys = properties.filter(k => k.modified && !k.column.isPK)
 
     return (await query<null>(
       "UPDATE ?? SET ? WHERE " + whereClause,
-      [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
+      [tableName, changes.reduce((last, current) => ({ ...last, [current[0]]: parseExpression(current[1]) }), {}),
         ...additionalValues
       ]
     )).affectedRows
@@ -151,12 +154,16 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     conditions: ConditionType<TEntity>[] = [],
     columns?: (keyof TEntity)[],
     limit?: number,
+    sort?: SortType<TEntity>,
   ) {
     let tableName = getTableName(new this.c())
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return (await this.query<TEntity>(
-      "SELECT ?? FROM ??" + (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
+      "SELECT ?? FROM ??" +
+        (whereClause ? ` WHERE ${whereClause}` : '') +
+        (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+        (limit ? ` LIMIT ${limit}` : ''),
       [columns ?? '*', tableName, ...additionalValues],
     )).map(o => {
       let entity = new this.c()
@@ -166,13 +173,16 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     })
   }
 
-  public asTable(conditions: ConditionType<TEntity>[] = [], limit?: number): TableInfo<TEntity> {
+  public asTable(conditions: ConditionType<TEntity>[] = [], limit?: number, sort?: SortType<TEntity>): TableInfo<TEntity> {
     let tableName = getTableName(new this.c())
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return [
       whereClause && limit ?
-        "SELECT * FROM ??" + (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : '') :
+        "SELECT * FROM ??" +
+          (whereClause ? ` WHERE ${whereClause}` : '') +
+          (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+          (limit ? ` LIMIT ${limit}` : '') :
         "??",
       [tableName, ...additionalValues],
       this.c,
@@ -189,7 +199,12 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     super(connection)
   }
 
-  public async list(conditions: ConditionType<TLeft & TRight>[] = [], columns?: (keyof (TLeft & TRight))[], limit?: number) {
+  public async list(
+    conditions: ConditionType<TLeft & TRight>[] = [],
+    columns?: (keyof (TLeft & TRight))[],
+    limit?: number,
+    sort?: SortType<TLeft & TRight>,
+  ) {
     let [whereClause, additionalValues] = parseCondition(conditions)
     // LeftC.prototype
 
@@ -202,7 +217,9 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 
     let q: QueryOptions = {
       sql: `SELECT ?? FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
-        (whereClause ? ` WHERE ${whereClause}` : '') + (limit ? ` LIMIT ${limit}` : ''),
+        (whereClause ? ` WHERE ${whereClause}` : '') +
+        (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+        (limit ? ` LIMIT ${limit}` : ''),
       nestTables: true
     }
     return (await this.query(q, [
@@ -224,13 +241,14 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 export type BooleanOperatorType = '=' | '>' | '<' | '>=' | '<=' | '<>' | 'IS' | 'IS NOT'
 export type CalculatingOperatorType = '+' | '-' | '*' | '/'
 export type AggregationFnType = 'COUNT' | 'SUM' | 'AVG'
-export type ExpressionType<TEntity extends Object> = [keyof TEntity] | number | string |
+export type ExpressionType<TEntity extends Object> = [keyof TEntity] | number | string | null |
   { fn: AggregationFnType, key: ExpressionType<TEntity> | '*' } |
   [ExpressionType<TEntity>, CalculatingOperatorType, ExpressionType<TEntity>]
 
 export type ConditionType<TEntity extends Object> =
   [ExpressionType<TEntity>, BooleanOperatorType, ExpressionType<TEntity>] |
   [ExpressionType<TEntity>, 'BETWEEN', (ExpressionType<TEntity>)[]]
+export type SortType<TEntity extends Object> = { key: keyof TEntity, mode: 'ASC' | 'DESC' }
 
 function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntity>[]): [string, any[]] {
   // let sql = conditions.map(c => `?? ${c[1]} ${c[1] === 'BETWEEN' ? '? AND ?' : '?'}`).join(' AND ')
@@ -310,14 +328,20 @@ export function Column(type: SupportedConstructor, visibility: number = 0) {
 }
 
 export function Id(target: Object, key: string) {
-  getColumns(target).find(k => k.key === key).isPK = true
+  let column = getColumns(target).find(k => k.key === key)
+  column.isPK = column.readonly = column.nullable = true
+}
+export function Readonly(target: Object, key: string) {
+  let column = getColumns(target).find(k => k.key === key)
+  column.readonly = column.nullable = true
 }
 export function Nullable(target: Object, key: string) {
   getColumns(target).find(k => k.key === key).nullable = true
 }
-export function Restriction(fn: (o: any) => string) {
+
+export function Restriction(...restrictions: Restriction[]) {
   return function (target: Object, key: string) {
-    getColumns(target).find(k => k.key === key).restrictions.push(fn)
+    getColumns(target).find(k => k.key === key).restrictions.push(...restrictions)
   }
 }
 export function Length(min?: number, max?: number) {

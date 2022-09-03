@@ -3,7 +3,6 @@ import { Column, Entity, Id, Nullable } from "../entity"
 @Entity('Malfunction')
 export class Malfunction {
   @Id
-  @Nullable
   @Column(Number)
   public id: number
   
