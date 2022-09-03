@@ -1,7 +1,7 @@
 import { DepositRecord, ExchangeRecord, PointRecord, PunishRecord, RechargeRecord } from "../entities/dto/RawRecords";
 import { Souvenir } from "../entities/dto/Souvenir";
 import { RawCustomer } from "../entities/dto/RawUser";
-import { DbEntity } from "../entities/entity";
+import { DbEntity, DbJoined } from "../entities/entity";
 import { transactionWrapper } from "../utils/db";
 import { LogicalError } from "../utils/errors";
 
@@ -20,6 +20,18 @@ export function listPointChanges(customerId: number, lastId: number, size: numbe
       [['customer_id'], '=', customerId],
       [['id'], '<', lastId],
     ], undefined, size, { key: 'id', mode: 'DESC' })
+  })
+}
+
+export function listExchangeRecords(customerId: number, lastId: number, size: number = 20) {
+  return transactionWrapper("listExchangeRecords", async connection => {
+    return await new DbJoined(
+      new DbEntity(ExchangeRecord).asTable([
+        [['customer_id'], '=', customerId],
+        [['id'], '<', lastId],
+      ], size, { key: 'id', mode: 'DESC' }),
+      new DbEntity(Souvenir).asTable()
+    ).list()
   })
 }
 

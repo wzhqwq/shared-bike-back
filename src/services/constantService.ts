@@ -6,7 +6,6 @@ import { Malfunction } from "../entities/dto/Malfunction";
 import { BikeSeries, RawBike } from "../entities/dto/RawBike";
 import { Souvenir } from "../entities/dto/Souvenir";
 import { DbEntity } from "../entities/entity";
-import { listHide } from "../entities/vo/Result";
 import { transactionWrapper } from "../utils/db";
 import { LogicalError } from "../utils/errors";
 
@@ -82,6 +81,12 @@ export function addSeries(series: BikeSeries) {
       release()
     })
   })
+}
+
+export function modifySeries(series: BikeSeries) {
+  return transactionWrapper("modifySeries", async connection =>
+    await new DbEntity(BikeSeries, connection).save(series)
+  )
 }
 
 export function removeSeries(seriesId: number) {

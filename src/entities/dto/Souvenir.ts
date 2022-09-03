@@ -1,4 +1,4 @@
-import { Column, Entity, Id, Readonly } from "../entity"
+import { Column, Entity, Id, Nullable, Readonly } from "../entity"
 
 @Entity("Souvenir")
 export class Souvenir {
@@ -8,6 +8,10 @@ export class Souvenir {
   
   @Column(String)
   public name: string
+
+  @Column(String)
+  @Nullable
+  public image_key: string
   
   @Column(Number)
   public price: number
@@ -15,7 +19,4 @@ export class Souvenir {
   @Column(Number)
   @Readonly
   public total_amount: number
-  
-  @Column(Number)
-  public exchange_limit: number
 }

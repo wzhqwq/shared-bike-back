@@ -100,9 +100,9 @@ export class Bike {
     else
       posLatitude = this.raw.p_latitude
 
-    let ppDb = new DbEntity(ParkingPoint)
+    let ppDb = new DbEntity(ParkingPoint, this.connection)
     if (status === BIKE_AVAILABLE) {
-      let sectionDb = new DbEntity(Section)
+      let sectionDb = new DbEntity(Section, this.connection)
       let section = await sectionDb.pullBySearching([
         [posLongitude, 'BETWEEN', [['bl_longitude'], ['tr_longitude']]],
         [posLatitude, 'BETWEEN', [['bl_latitude'], ['tr_latitude']]],
@@ -119,7 +119,7 @@ export class Bike {
       ])
 
       if (pp) {
-        let ppDb = new DbEntity(ParkingPoint)
+        let ppDb = new DbEntity(ParkingPoint, this.connection)
         await ppDb.update([['bikes_count', [['bikes_count'], '+', 1]]], [[['id'], '=', pp.id]])
       }
 
@@ -140,14 +140,14 @@ export class Bike {
   }
 
   public async calculateHealth() {
-    if (this.raw.mileage > (await getSeries(this.raw.series_id)).mileage_limit) return 0 // 超过报废里程就报废
-
-    let recordDb = new DbEntity(MalfunctionRecord)
-    let malfunctionDb = new DbEntity(Malfunction)
+    if (this.raw.mileage > getSeries(this.raw.series_id).mileage_limit) return 0 // 超过报废里程就报废
 
     let records = await new DbJoined(
-      recordDb.asTable([[['bike_id'], '=', this.raw.id], [['status'], '<', REPAIR_FIXED]]),
-      malfunctionDb.asTable(),
+      new DbEntity(MalfunctionRecord).asTable([
+        [['bike_id'], '=', this.raw.id],
+        [['status'], '<', REPAIR_FIXED],
+      ]),
+      new DbEntity(Malfunction).asTable(),
       this.connection
     ).list([], ['degree', 'damage_degree', 'malfunction_id'])
 

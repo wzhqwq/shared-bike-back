@@ -1,4 +1,4 @@
-import { Column, Entity, Foreign, Id, Length, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Length, Nullable, Restriction } from "../entity"
 import { RawMaintainer } from "./RawUser"
 
 @Entity("Section")
@@ -8,15 +8,19 @@ export class Section {
   public id: number
   
   @Column(String)
+  @Restriction('geographical')
   public tr_longitude: string
   
   @Column(String)
+  @Restriction('geographical')
   public tr_latitude: string
   
   @Column(String)
+  @Restriction('geographical')
   public bl_longitude: string
   
   @Column(String)
+  @Restriction('geographical')
   public bl_latitude: string
 
   @Column(String)

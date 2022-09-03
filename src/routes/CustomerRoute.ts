@@ -1,10 +1,11 @@
 import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
 import { Paginator, paginatorParams } from "../entities/dto/Paginator"
-import { MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
+import { ExchangeRecord, MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
 import Result from "../entities/vo/Result"
 import { listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
-import { listDepositChanges, listPointChanges, recharge } from "../services/customerPropertyService"
+import { listSouvenirs } from "../services/constantService"
+import { exchange, listDepositChanges, listExchangeRecords, listPointChanges, recharge } from "../services/customerPropertyService"
 import { roleOnly } from "../utils/auth"
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList } from "../utils/body"
 
@@ -63,17 +64,16 @@ propertyRouter.post("/recharge", checkBodyAsEntity(RechargeRecord), async ctx =>
 let souvenirRouter = new Router()
 
 souvenirRouter.get("/list_items", async ctx => {
-
+  ctx.body = await listSouvenirs()
 })
 
-souvenirRouter.get("/list_exchanged", async ctx => {
-
+souvenirRouter.get("/list_exchanged", checkBody(paginatorParams), async ctx => {
+  let { lastId, size } = ctx.request.body as Paginator
+  ctx.body = await listExchangeRecords(ctx.state.user.id, lastId, size)
 })
 
-souvenirRouter.post("/exchange", checkBody([
-  { key: 'id', restrictions: ['integer'] },
-]), async ctx => {
-
+souvenirRouter.post("/exchange", checkBodyAsEntity(ExchangeRecord), async ctx => {
+  ctx.body = await exchange(ctx.request.body, ctx.state.user.id)
 })
 
 customerRouter.use('/bike', bikeRouter.routes())

@@ -88,7 +88,7 @@ export async function transactionWrapper<T>(
   name: string,
   fn: (connection: PoolConnection) => Promise<T>,
   retryCount: number = 0
-) {
+): Promise<T> {
   let { connection, commit, rollback } = await startTransaction(name)
   try {
     let result = await fn(connection)

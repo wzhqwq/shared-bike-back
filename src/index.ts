@@ -8,6 +8,8 @@ import body = require("koa-body")
 import cors = require("@koa/cors")
 import customerRouter from "./routes/customerRoute"
 import { initializeCache } from "./services/constantService"
+import maintainerRouter from "./routes/maintainerRoute"
+import managerRouter from "./routes/managerRoute"
 
 log4js.configure({
   appenders: {
@@ -56,6 +58,8 @@ root.get("/", async ctx => {
 })
 root.use("/auth", authRouter.routes())
 root.use("/customer", customerRouter.routes())
+root.use("/maintainer", maintainerRouter.routes())
+root.use("/manager", managerRouter.routes())
 
 app.use(body())
 app.use(root.routes())

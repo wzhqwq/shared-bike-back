@@ -166,14 +166,12 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
       default:
         throw new LogicalError("参数无效")
     }
-    let db = new DbEntity(C)
-    let userDb = new DbEntity(RawUser)
-    let mixedDb = new DbJoined(
-      db.asTable([[['user_id'], '<', lastId]], size, { key: 'user_id', mode: 'DESC' }),
-      userDb.asTable(),
+    let db = new DbJoined(
+      new DbEntity(C).asTable([[['user_id'], '<', lastId]], size, { key: 'user_id', mode: 'DESC' }),
+      new DbEntity(RawUser).asTable(),
       connection
     )
-    return (await mixedDb.list()).map(([x, u]) => ({ ...x, nickname: u.nickname }))
+    return (await db.list()).map(([x, u]) => ({ ...x, nickname: u.nickname }))
   })
 }
 

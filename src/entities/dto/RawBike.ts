@@ -1,5 +1,5 @@
 import { MAINTAINER_USER } from "../../constant/values"
-import { Column, Entity, Foreign, Id, Nullable, Readonly } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable, Readonly, Restriction } from "../entity"
 
 @Entity("BikeSeries")
 export class BikeSeries {
@@ -14,7 +14,7 @@ export class BikeSeries {
   public mileage_limit: number
 
   @Column(Number)
-  @Nullable
+  @Readonly
   public amount: number
 }
 
@@ -29,9 +29,11 @@ export class RawBike {
   public series_id: number
   
   @Column(String)
+  @Restriction('geographical')
   public p_longitude: string
   
   @Column(String)
+  @Restriction('geographical')
   public p_latitude: string
   
   @Column(Number, MAINTAINER_USER)

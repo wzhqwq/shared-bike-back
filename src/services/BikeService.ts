@@ -16,8 +16,6 @@ import { RawMaintainer } from "../entities/dto/RawUser"
 
 export function listBikes(lastId: number, size: number = 20, filter?: "danger" | "NA" | "all", sectionId?: number) {
   return transactionWrapper("listBikes", async (connection) => {
-    let bikeDb = new DbEntity(RawBike, connection)
-    let seriesDb = new DbEntity(BikeSeries, connection)
     let conditions: ConditionType<RawBike>[] = [[['id'], '<', lastId]]
     switch (filter) {
       case "danger":
@@ -36,8 +34,20 @@ export function listBikes(lastId: number, size: number = 20, filter?: "danger" |
     }
     if (sectionId) conditions.push([['parking_section_id'], '=', sectionId])
     let joinedDb = new DbJoined(
-      bikeDb.asTable(conditions, size, { key: 'id', mode: 'DESC' }),
-      seriesDb.asTable(), 
+      new DbEntity(RawBike).asTable(conditions, size, { key: 'id', mode: 'DESC' }),
+      new DbEntity(BikeSeries).asTable(), 
+      connection
+    )
+    return (await joinedDb.list())
+      .map(([b, s]) => ({ ...b, series_name: s.name }))
+  })
+}
+
+export function listBikesInSection(sectionId: number) {
+  return transactionWrapper("listBikesInSection", async (connection) => {
+    let joinedDb = new DbJoined(
+      new DbEntity(RawBike).asTable([[['parking_section_id'], '=', sectionId]]),
+      new DbEntity(BikeSeries).asTable(), 
       connection
     )
     return (await joinedDb.list())
@@ -149,7 +159,7 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
     let malfunctionIds = cachedMalfunctions.map(m => m.id)
     if (mRecords.some(r => !malfunctionIds.includes(r.malfunction_id))) throw new LogicalError("故障ID不存在")
 
-    let rideDb = new DbEntity(RideRecord)
+    let rideDb = new DbEntity(RideRecord, connection)
     let rideRecord = await rideDb.pullBySearching([[['id'], '=', mRecords[0].ride_id]])
     if (!rideRecord) throw new LogicalError("骑行日志不存在")
     if (rideRecord.customer_id !== customerId) throw new LogicalError("您与该骑行无关，无法报修")
@@ -222,7 +232,7 @@ export function destroyBike(record: DestroyRecord, managerId: number) {
     if (bike.raw.status === BIKE_DESTROYED) throw new LogicalError("单车已经报废过了")
 
     await bike.update(BIKE_DESTROYED)
-    let recordDb = new DbEntity(DestroyRecord)
+    let recordDb = new DbEntity(DestroyRecord, connection)
     record.manager_id = managerId
     record.time = new Date()
     await recordDb.append(record)
@@ -233,8 +243,15 @@ export function destroyBike(record: DestroyRecord, managerId: number) {
   })
 }
 
-export function listSection() {
-  return transactionWrapper("listSection", async (connection) => new DbEntity(Section, connection).list())
+export function listSection(maintainerId?: number) {
+  return transactionWrapper("listSection", async (connection) => {
+    if (!maintainerId) return await new DbEntity(Section, connection).list()
+    return (await new DbJoined(
+      new DbEntity(MaintainerSection).asTable([[['maintainer_id'], '=', maintainerId]]),
+      new DbEntity(Section).asTable(),
+      connection
+    ).list()).map(([_, s]) => s)
+  })
 }
 
 export function createSection(section: Section) {
