@@ -99,28 +99,33 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     super(connection)
   }
 
-  public async save(o: TEntity, forceInsert: boolean = false) {
+  public async save(o: TEntity) {
+    let properties = getProperties(o)
+    let tableName = getTableName(o)
+
+    let id = properties.find(k => k.column.isPK)
+    let modifiedKeys = properties.filter(k => k.modified && !k.column.isPK)
+    modifiedKeys.forEach(k => { k.modified = false })
+    modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
+    await query<null>(
+      "UPDATE ?? SET ? WHERE ?? = ?",
+      [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
+        id.column.key, id.value]
+    )
+  }
+
+  public async append(o: TEntity) {
     let properties = getProperties(o)
     let tableName = getTableName(o)
 
     let id = properties.find(k => k.column.isPK)
     let modifiedKeys = properties.filter(k => k.modified)
-    if (!id.value || forceInsert) {
-      let { insertId } = await query<null>(
-        "INSERT INTO ?? (??) VALUES (?)",
-        [tableName, modifiedKeys.map(k => k.column.key), modifiedKeys.map(k => k.value)]
-      )
-      id.value = insertId
-    }
-    else {
-      modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
-      await query<null>(
-        "UPDATE ?? SET ? WHERE ?? = ?",
-        [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
-          id.column.key, id.value]
-      )
-    }
     modifiedKeys.forEach(k => { k.modified = false })
+    let { insertId } = await query<null>(
+      "INSERT INTO ?? (??) VALUES (?)",
+      [tableName, modifiedKeys.map(k => k.column.key), modifiedKeys.map(k => k.value)]
+    )
+    id.value = insertId
   }
 
   public async update(changes: [keyof TEntity, ExpressionType<TEntity>][], conditions: ConditionType<TEntity>[]) {
@@ -303,11 +308,14 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
     return entity
   }
 
-  public save(entity: TEntity) {
-    return Promise.all([
-      this.db.save(entity),
-      redisClient.setEx(this.prefix + entity[this.fetchKey], 60, JSON.stringify(entity)),
-    ])
+  public async save(entity: TEntity) {
+    await this.db.save(entity)
+    await redisClient.setEx(this.prefix + entity[this.fetchKey], 60, JSON.stringify(entity))
+  }
+
+  public async append(entity: TEntity) {
+    await this.db.append(entity)
+    await redisClient.setEx(this.prefix + entity[this.fetchKey], 60, JSON.stringify(entity))
   }
 
   public async removeCache(keyword: any) {
@@ -329,7 +337,7 @@ export function Column(type: SupportedConstructor, visibility: number = 0) {
 
 export function Id(target: Object, key: string) {
   let column = getColumns(target).find(k => k.key === key)
-  column.isPK = column.readonly = column.nullable = true
+  column.isPK = column.nullable = true
 }
 export function Readonly(target: Object, key: string) {
   let column = getColumns(target).find(k => k.key === key)

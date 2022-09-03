@@ -12,6 +12,7 @@ import { bikeComm } from "../utils/auth"
 import { MaintainerSection, Section } from "../entities/dto/Section"
 import { ParkingPoint } from "../entities/dto/ParkingPoint"
 import { posDecimal } from "../utils/body"
+import { RawMaintainer } from "../entities/dto/RawUser"
 
 export function listBikes(lastId: number, size: number = 20, filter?: "danger" | "NA" | "all", sectionId?: number) {
   return transactionWrapper("listBikes", async (connection) => {
@@ -131,7 +132,13 @@ export function handleMalfunction(repairRecord: RepairRecord) {
       [['malfunction_id'], '=', repairRecord.malfunction_id],
     ])
 
-    await repairDb.save(repairRecord)
+    await repairDb.append(repairRecord)
+
+    await new DbEntity(RawMaintainer, connection).update([
+      ['handle_count', [['handle_count'], '+', 1]]
+    ], [
+      [['user_id'], '=', repairRecord.maintainer_id]
+    ])
 
     return malfunctionRecords.map(r => r.id)
   })
@@ -139,7 +146,7 @@ export function handleMalfunction(repairRecord: RepairRecord) {
 
 export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: number) {
   return transactionWrapper("reportMalfunction", async (connection) => {
-    let malfunctionIds = (await cachedMalfunctions).map(m => m.id)
+    let malfunctionIds = cachedMalfunctions.map(m => m.id)
     if (mRecords.some(r => !malfunctionIds.includes(r.malfunction_id))) throw new LogicalError("故障ID不存在")
 
     let rideDb = new DbEntity(RideRecord)
@@ -151,7 +158,7 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
     let mRecordDb = new DbEntity(MalfunctionRecord, connection)
     await Promise.all(mRecords.map(async r => {
       r.bike_id = bikeId
-      return await mRecordDb.save(r)
+      return await mRecordDb.append(r)
     }))
 
     // 计算积分
@@ -179,7 +186,7 @@ export function listMalfunctionRecords(customerId: number, rideId: number) {
 
 export function registerBike(encrypted: string, seriesId: number) {
   return transactionWrapper("registerBike", async (connection) => {
-    if (!(await cachedSeriesList).some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")
+    if (!cachedSeriesList.some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")
 
     let messages = bikeComm.decrypt(encrypted)
     if (messages.length !== 3) throw new LogicalError("单车识别失败")
@@ -218,7 +225,7 @@ export function destroyBike(record: DestroyRecord, managerId: number) {
     let recordDb = new DbEntity(DestroyRecord)
     record.manager_id = managerId
     record.time = new Date()
-    await recordDb.save(record)
+    await recordDb.append(record)
 
     await decreaseSeriesCount(bike.raw.series_id, connection)
 
@@ -233,7 +240,7 @@ export function listSection() {
 export function createSection(section: Section) {
   return transactionWrapper("createSection", async (connection) => {
     let sectionDb = new DbEntity(Section, connection)
-    await sectionDb.save(section)
+    await sectionDb.append(section)
     
     // 更新管理区内单车
     let bikeDb = new DbEntity(RawBike, connection)
@@ -269,7 +276,7 @@ export function deleteSection(sectionId: number) {
 export function grantSectionTo(pair: MaintainerSection) {
   return transactionWrapper("revokeSectionFrom", async (connection) => {
     let db = new DbEntity(MaintainerSection, connection)
-    await db.save(pair)
+    await db.append(pair)
 
     return null
   })
@@ -291,7 +298,7 @@ export function listParkingPoint() {
 export function createParkingPoint(pp: ParkingPoint) {
   return transactionWrapper("createParkingPoint", async (connection) => {
     let ppDb = new DbEntity(ParkingPoint, connection)
-    await ppDb.save(pp)
+    await ppDb.append(pp)
     return null
   })
 }

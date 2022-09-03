@@ -1,7 +1,7 @@
 import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, MASTER_BILL_FROM_BIKE, MASTER_BILL_FROM_OTHER, MASTER_BILL_FROM_RIDING, MASTER_BILL_FROM_SOUVENIR } from "../constant/values"
 import { BikeSeries } from "../entities/dto/RawBike"
 import { BikeBill, ManagerBill, OtherBill, RideRecord, SouvenirBill } from "../entities/dto/RawRecords"
-import { RawSouvenir } from "../entities/dto/RawSouvenir"
+import { Souvenir } from "../entities/dto/Souvenir"
 import { RawCustomer, RawUser } from "../entities/dto/RawUser"
 import { DbEntity, DbJoined } from "../entities/entity"
 import { query, transactionWrapper } from "../utils/db"
@@ -40,7 +40,7 @@ export function listMasterBill(lastId: number, size: number = 20) {
 export function getBillDetails(type: number, recordId: number) {
   return transactionWrapper("getBillDetails", async connection => {
     let CLeft: { new(...args: any[]): RideRecord | BikeBill | SouvenirBill | OtherBill }
-    let CRight: { new(...args: any[]): RawCustomer | BikeSeries | RawSouvenir }
+    let CRight: { new(...args: any[]): RawCustomer | BikeSeries | Souvenir }
     switch (type) {
       case MASTER_BILL_FROM_RIDING:
         CLeft = RideRecord
@@ -52,7 +52,7 @@ export function getBillDetails(type: number, recordId: number) {
         break
       case MASTER_BILL_FROM_SOUVENIR:
         CLeft = SouvenirBill
-        CRight = RawSouvenir
+        CRight = Souvenir
         break
       case MASTER_BILL_FROM_OTHER:
         CLeft = OtherBill
@@ -87,7 +87,7 @@ export function purchaseBikes(record: BikeBill, managerId: number) {
   return transactionWrapper("purchaseBikes", async connection => {
     record.manager_id = managerId
     record.time = new Date()
-    await new DbEntity(BikeBill, connection).save(record)
+    await new DbEntity(BikeBill, connection).append(record)
     return record
   })
 }
@@ -96,7 +96,7 @@ export function purchaseSouvenir(record: SouvenirBill, managerId: number) {
   return transactionWrapper("purchaseSouvenir", async connection => {
     record.manager_id = managerId
     record.time = new Date()
-    await new DbEntity(SouvenirBill, connection).save(record)
+    await new DbEntity(SouvenirBill, connection).append(record)
     return record
   })
 }
@@ -105,7 +105,7 @@ export function recordOtherBill(record: OtherBill, managerId: number) {
   return transactionWrapper("recordOtherBill", async connection => {
     record.manager_id = managerId
     record.time = new Date()
-    await new DbEntity(OtherBill, connection).save(record)
+    await new DbEntity(OtherBill, connection).append(record)
     return record
   })
 }

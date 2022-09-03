@@ -30,7 +30,7 @@ export function signUp(user: RawUser) {
     if (await db.pullBySearching([[['nickname'], '=', user.nickname]])) throw new LogicalError("昵称已被使用")
 
     user.role = 0
-    await db.save(user)
+    await db.append(user)
     return signJwt(user)
   })
 }
@@ -50,7 +50,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       customer.user_id = id
 
       let customerDb = new DbEntity(RawCustomer, connection)
-      await customerDb.save(customer, true)
+      await customerDb.append(customer)
     }
     else {
       let recordDb = new DbEntity(SignUpRequest, connection)
@@ -67,7 +67,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       mixedUser.name = record.name
 
       let mixedDb = new DbEntity(record.type === 0 ? RawMaintainer : RawManager)
-      await mixedDb.save(mixedUser, true)
+      await mixedDb.append(mixedUser)
     }
     let userDb = new DbEntity(RawUser, connection)
     await userDb.update([['role', role]], [[['id'], '=', id]])
@@ -88,7 +88,7 @@ export function requestToBe(request: SignUpRequest) {
     }
     requestInDb.status = 0
     requestInDb.time = new Date()
-    await recordDb.save(requestInDb)
+    await recordDb.append(requestInDb)
   })
 }
 

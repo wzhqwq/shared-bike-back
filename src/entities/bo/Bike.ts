@@ -30,7 +30,7 @@ export class Bike {
     this.raw.p_longitude = posLongitude
     this.raw.p_latitude = posLatitude
     this.raw.status = BIKE_NOT_ACTIVATED
-    await this.bikeDb.save(this.raw)
+    await this.bikeDb.append(this.raw)
     return this.raw.id
   }
 

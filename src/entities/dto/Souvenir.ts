@@ -1,7 +1,7 @@
-import { Column, Entity, Id, Nullable } from "../entity"
+import { Column, Entity, Id, Readonly } from "../entity"
 
 @Entity("Souvenir")
-export class RawSouvenir {
+export class Souvenir {
   @Id
   @Column(Number)
   public id: number
@@ -13,6 +13,7 @@ export class RawSouvenir {
   public price: number
   
   @Column(Number)
+  @Readonly
   public total_amount: number
   
   @Column(Number)

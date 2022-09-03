@@ -1,8 +1,10 @@
 import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
-import { MalfunctionRecord } from "../entities/dto/RawRecords"
+import { Paginator, paginatorParams } from "../entities/dto/Paginator"
+import { MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
 import Result from "../entities/vo/Result"
 import { listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
+import { listDepositChanges, listPointChanges, recharge } from "../services/customerPropertyService"
 import { roleOnly } from "../utils/auth"
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList } from "../utils/body"
 
@@ -41,29 +43,36 @@ bikeRouter.post("/report", checkBodyAsEntityList(MalfunctionRecord), async ctx =
 
 let propertyRouter = new Router()
 
-propertyRouter.get("/list/:type", ctx => {
+propertyRouter.get("/list/:type", checkBody(paginatorParams), async ctx => {
+  let { lastId, size } = ctx.request.body as Paginator
   let type = ctx.params.type as "points" | "deposit"
+  switch(type) {
+    case 'points':
+      ctx.body = await listPointChanges(ctx.state.user.id, lastId, size)
+      break
+    case 'deposit':
+      ctx.body = await listDepositChanges(ctx.state.user.id, lastId, size)
+      break
+  }
 })
 
-propertyRouter.post("/recharge", checkBody([
-  { key: 'amount', restrictions: ['number'] },
-]), ctx => {
-
+propertyRouter.post("/recharge", checkBodyAsEntity(RechargeRecord), async ctx => {
+  ctx.body = await recharge(ctx.request.body, ctx.state.user.id)
 })
 
 let souvenirRouter = new Router()
 
-souvenirRouter.get("/list_items", ctx => {
+souvenirRouter.get("/list_items", async ctx => {
 
 })
 
-souvenirRouter.get("/list_exchanged", ctx => {
+souvenirRouter.get("/list_exchanged", async ctx => {
 
 })
 
 souvenirRouter.post("/exchange", checkBody([
   { key: 'id', restrictions: ['integer'] },
-]), ctx => {
+]), async ctx => {
 
 })
 

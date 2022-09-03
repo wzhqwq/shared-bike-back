@@ -1,7 +1,7 @@
 import { Column, Entity, Foreign, Id, Length, Nullable, Readonly, Restriction } from "../entity"
 import { BikeSeries, RawBike } from "./RawBike"
 import { Malfunction } from "./Malfunction"
-import { RawSouvenir } from "./RawSouvenir"
+import { Souvenir } from "./Souvenir"
 import { RawCustomer, RawMaintainer, RawManager, RawUser } from "./RawUser"
 
 class BaseRecord {
@@ -10,7 +10,6 @@ class BaseRecord {
   public id: number
   
   @Nullable
-  @Readonly
   @Column(Date)
   public time: Date
 }
@@ -132,7 +131,7 @@ export class PunishRecord extends BaseRecord {
 
 @Entity("ExchangeRecord")
 export class ExchangeRecord extends BaseRecord {
-  @Foreign(RawSouvenir, 'id')
+  @Foreign(Souvenir, 'id')
   @Column(Number)
   public souvenir_id: number
   
@@ -176,7 +175,6 @@ class BaseBill {
   @Column(Number)
   public id: number
   
-  @Readonly
   @Column(Date)
   public time: Date
   
@@ -203,7 +201,7 @@ export class BikeBill extends BaseBill {
 
 @Entity("SouvenirBill")
 export class SouvenirBill extends BaseBill {
-  @Foreign(RawSouvenir, 'id')
+  @Foreign(Souvenir, 'id')
   @Column(Number)
   public souvenir_id: number
   

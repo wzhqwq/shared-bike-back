@@ -4,7 +4,9 @@ import { BIKE_DESTROYED } from "../constant/values";
 import { Configuration } from "../entities/dto/Configuration";
 import { Malfunction } from "../entities/dto/Malfunction";
 import { BikeSeries, RawBike } from "../entities/dto/RawBike";
+import { Souvenir } from "../entities/dto/Souvenir";
 import { DbEntity } from "../entities/entity";
+import { listHide } from "../entities/vo/Result";
 import { transactionWrapper } from "../utils/db";
 import { LogicalError } from "../utils/errors";
 
@@ -27,7 +29,11 @@ export function getConfigValue(id: number) {
 export function setConfig(pairs: Configuration[]) {
   return transactionWrapper("setConfig", async connection => {
     let configDb = new DbEntity(Configuration, connection)
-    await Promise.all(pairs.map(async pair => await configDb.save(pair)))
+    await Promise.all(
+      pairs
+        .filter(p => Boolean(p.id))
+        .map(async pair => await configDb.save(pair))
+    )
     let list = await configDb.list()
     // 写锁，避免业务代码冲突
     lock('config', release => {
@@ -70,7 +76,7 @@ export async function increaseSeriesCount(id: number, connection: PoolConnection
 export function addSeries(series: BikeSeries) {
   return transactionWrapper("addSeries", async connection => {
     series.amount = 0
-    await new DbEntity(BikeSeries, connection).save(series)
+    await new DbEntity(BikeSeries, connection).append(series)
     lock('series', release => {
       cachedSeriesList = [...cachedSeriesList, series]
       release()
@@ -101,7 +107,7 @@ export function getMalfunction(id: number) {
 
 export function addMalfunction(malfunction: Malfunction) {
   return transactionWrapper("addMalfunction", async connection => {
-    await new DbEntity(Malfunction, connection).save(malfunction)
+    await new DbEntity(Malfunction, connection).append(malfunction)
     lock('malfunction', release => {
       cachedMalfunctions = [...cachedMalfunctions, malfunction]
       release()
@@ -119,3 +125,26 @@ export function modifyMalfunctionName(malfunctionId: number, name: string) {
   })
 }
 
+export function listSouvenirs() {
+  return transactionWrapper("listSouvenirs", async connection =>
+    await new DbEntity(Souvenir, connection).list()
+  )
+}
+
+export function addSouvenir(souvenir: Souvenir) {
+  return transactionWrapper("addSouvenir", async connection =>
+    await new DbEntity(Souvenir, connection).append(souvenir)
+  )
+}
+
+export function modifySouvenir(souvenir: Souvenir) {
+  return transactionWrapper("modifySouvenir", async connection =>
+    await new DbEntity(Souvenir, connection).save(souvenir)
+  )
+}
+
+export function removeSouvenir(souvenirId: number) {
+  return transactionWrapper("removeSouvenir", async connection =>
+    await new DbEntity(Souvenir, connection).delete([[['id'], '=', souvenirId]])
+  )
+}

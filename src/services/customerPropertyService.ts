@@ -1,5 +1,5 @@
 import { DepositRecord, ExchangeRecord, PointRecord, PunishRecord, RechargeRecord } from "../entities/dto/RawRecords";
-import { RawSouvenir } from "../entities/dto/RawSouvenir";
+import { Souvenir } from "../entities/dto/Souvenir";
 import { RawCustomer } from "../entities/dto/RawUser";
 import { DbEntity } from "../entities/entity";
 import { transactionWrapper } from "../utils/db";
@@ -28,7 +28,7 @@ export function recharge(record: RechargeRecord, customerId: number) {
     let rechargeDb = new DbEntity(RechargeRecord, connection)
     record.customer_id = customerId
     record.time = new Date()
-    await rechargeDb.save(record)
+    await rechargeDb.append(record)
 
     return record
   })
@@ -37,7 +37,7 @@ export function recharge(record: RechargeRecord, customerId: number) {
 export function exchange(record: ExchangeRecord, customerId: number) {
   return transactionWrapper("exchange", async connection => {
     let customerDb = new DbEntity(RawCustomer, connection)
-    let souvenirDb = new DbEntity(RawSouvenir, connection)
+    let souvenirDb = new DbEntity(Souvenir, connection)
     let customer = await customerDb.pullBySearching([[['user_id'], '=', customerId]])
     let souvenir = await souvenirDb.pullBySearching([[['id'], '=', record.souvenir_id]])
     if (!customer) throw new LogicalError("用户不存在")
@@ -49,7 +49,7 @@ export function exchange(record: ExchangeRecord, customerId: number) {
     record.given = 0
     record.customer_id = customerId
     record.time = new Date()
-    await exchangeDb.save(record)
+    await exchangeDb.append(record)
 
     return record
   })
@@ -63,7 +63,7 @@ export function punish(record: PunishRecord) {
 
     let punishDb = new DbEntity(PunishRecord, connection)
     record.time = new Date()
-    await punishDb.save(record)
+    await punishDb.append(record)
     
     return record
   })
