@@ -2,9 +2,9 @@ import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
 import { MalfunctionRecord } from "../entities/dto/RawRecords"
 import Result from "../entities/vo/Result"
-import { listBikesAround, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
+import { listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
 import { roleOnly } from "../utils/auth"
-import { checkBody, checkBodyAsEntity } from "../utils/body"
+import { checkBody, checkBodyAsEntity, checkBodyAsEntityList } from "../utils/body"
 
 const customerRouter = new Router()
 customerRouter.use(roleOnly(CUSTOMER_USER))
@@ -35,8 +35,8 @@ bikeRouter.post("/update", checkBody([
   ctx.body = Result.success(await updateWhileRiding(bike_id, ctx.state.user.id, encrypted))
 })
 
-bikeRouter.post("/report", checkBodyAsEntity(MalfunctionRecord), async ctx => {
-
+bikeRouter.post("/report", checkBodyAsEntityList(MalfunctionRecord), async ctx => {
+  ctx.body = Result.success(await reportMalfunction(ctx.request.body, ctx.state.user.id))
 })
 
 let propertyRouter = new Router()

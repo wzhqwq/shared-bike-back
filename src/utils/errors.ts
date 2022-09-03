@@ -15,8 +15,10 @@ export class PermissionError extends Error {
 }
 
 export class DatabaseError extends Error {
+  public code: string
   constructor (err: MysqlError) {
     super(err.sqlMessage ?? err.message)
     this.name = 'database'
+    this.code = err.code
   }
 }

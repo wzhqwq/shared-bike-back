@@ -14,6 +14,7 @@ export const BIKE_AVAILABLE = 0
 export const BIKE_OCCUPIED = 1
 export const BIKE_UNAVAILABLE = 2
 export const BIKE_DESTROYED = 3
+export const BIKE_NOT_ACTIVATED = 4
 
 export const REPAIR_UNHANDLED = 0
 export const REPAIR_FAILED = 1
@@ -30,4 +31,16 @@ export const CONFIG_REWARD_DESCRIPTION = 2
 export const CONFIG_CHARGE_MIN_SECONDS = 3
 export const CONFIG_CHARGE_MIN_MILAGE = 4
 export const CONFIG_CHARGE_PER_MINUTE = 5
+export const CONFIG_SAFE_HEALTH = 40
 
+export const MASTER_BILL_FROM_RIDING = 0
+export const MASTER_BILL_FROM_BIKE = 1
+export const MASTER_BILL_FROM_SOUVENIR = 2
+export const MASTER_BILL_FROM_OTHER = 3
+
+export const POINT_FROM_REPORTING = 0
+export const POINT_FROM_EXCHANGE = 1
+export const POINT_FROM_PUNISHMENT = 2
+
+export const DEPOSIT_FROM_RECHARGE = 0
+export const DEPOSIT_FROM_RIDING = 1

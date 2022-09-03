@@ -1,5 +1,5 @@
 import { MAINTAINER_USER } from "../../constant/values"
-import { Column, Entity, Foreign, Id, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable, Readonly } from "../entity"
 
 @Entity("BikeSeries")
 export class BikeSeries {
@@ -14,6 +14,7 @@ export class BikeSeries {
   public mileage_limit: number
 
   @Column(Number)
+  @Nullable
   public amount: number
 }
 

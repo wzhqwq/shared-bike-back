@@ -1,5 +1,5 @@
 import crypto = require("crypto")
-import { CUSTOMER_USER, MAINTAINER_USER, PASSWORD_SALT, PASSWORD_SECRET } from "../constant/values"
+import { CUSTOMER_USER, MAINTAINER_USER, MANAGER_USER, PASSWORD_SALT, PASSWORD_SECRET } from "../constant/values"
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawUser, RawMaintainer, RawManager, RawCustomer } from "../entities/dto/RawUser"
 import { DbEntity, DbJoined } from "../entities/entity"
@@ -43,10 +43,9 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       "(SELECT user_id FROM Manager WHERE user_id = ?)" +
     ") AS Mixed", [id, id, id], connection)
     if (matchedUsers.length) throw new LogicalError("用户已经被分配了角色")
-    let user = new RawUser()
-    user.id = id
+    let role: number
     if (isCustomer) {
-      user.role = CUSTOMER_USER
+      role = CUSTOMER_USER
       let customer = new RawCustomer()
       customer.user_id = id
 
@@ -60,7 +59,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       if (record.status == 0) throw new LogicalError("角色分配请求未得到处理")
       if (record.status == 2) throw new LogicalError("角色分配请求被拒绝")
 
-      user.role = MAINTAINER_USER + record.type
+      role = MAINTAINER_USER + record.type
 
       let mixedUser = record.type === 0 ? new RawMaintainer() : new RawManager()
       mixedUser.user_id = record.user_id
@@ -71,9 +70,9 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       await mixedDb.save(mixedUser, true)
     }
     let userDb = new DbEntity(RawUser, connection)
-    await userDb.save(user)
+    await userDb.update([['role', role]], [[['id'], '=', id]])
 
-    return signJwt(user)
+    return signJwt({ id, role })
   })
 }
 
@@ -86,7 +85,6 @@ export function requestToBe(request: SignUpRequest) {
     }
     else {
       requestInDb = request
-      requestInDb.id = undefined
     }
     requestInDb.status = 0
     requestInDb.time = new Date()
@@ -98,7 +96,11 @@ export function listSignUpRequests(lastId: number, size: number = 20) {
   return transactionWrapper("listSignUpRequests", async (connection) => {
     let recordDb = new DbEntity(SignUpRequest, connection)
     let userDb = new DbEntity(RawUser, connection)
-    let joinedDb = new DbJoined(recordDb.asTable([[['id'], '>', lastId]], size), userDb.asTable(), connection)
+    let joinedDb = new DbJoined(
+      recordDb.asTable([[['id'], '<', lastId]], size, { key: 'id', mode: 'DESC' }),
+      userDb.asTable(),
+      connection
+    )
     return (await joinedDb.list()).map(([r, u]) => ({ ...r, nickname: u.nickname }))
   })
 }
@@ -132,10 +134,7 @@ export function editNickname(nickname: string, id: number) {
   return transactionWrapper("editNickname", async connection => {
     let db = new DbEntity(RawUser, connection)
     if (await db.pullBySearching([[['nickname'], '=', nickname], [['id'], '<>', id]])) throw new LogicalError("昵称已被使用")
-    let user = new RawUser()
-    user.nickname = nickname
-    user.id = id
-    await db.save(user)
+    await db.update([['nickname', nickname]], [[['id'], '=', id]])
     return null
   })
 }
@@ -153,7 +152,7 @@ export function editPassword(password: string, oldPassword: string, id: number) 
 
 export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: number, size: number = 20) {
   return transactionWrapper("listUsers", async connection => {
-    let C: { new(...args: any[]) }
+    let C: { new(...args: any[]): RawCustomer | RawMaintainer | RawManager }
     switch (role) {
       case 'customer':
         C = RawCustomer
@@ -169,7 +168,40 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
     }
     let db = new DbEntity(C)
     let userDb = new DbEntity(RawUser)
-    let mixedDb = new DbJoined(db.asTable([[['id'], '>', lastId]], size), userDb.asTable(), connection)
+    let mixedDb = new DbJoined(
+      db.asTable([[['user_id'], '<', lastId]], size, { key: 'user_id', mode: 'DESC' }),
+      userDb.asTable(),
+      connection
+    )
     return (await mixedDb.list()).map(([x, u]) => ({ ...x, nickname: u.nickname }))
+  })
+}
+
+export function getUser(userId: number) {
+  return transactionWrapper("listUsers", async connection => {
+    let userDb = new DbEntity(RawUser, connection)
+    let user = await userDb.pullBySearching([[['id'], '=', userId]])
+    if (!user) throw new LogicalError("用户不存在")
+    
+    let C: { new(...args: any[]): RawCustomer | RawMaintainer | RawManager }
+    switch (user.role) {
+      case CUSTOMER_USER:
+        C = RawCustomer
+        break
+      case MAINTAINER_USER:
+        C = RawMaintainer
+        break
+      case MANAGER_USER:
+        C = RawManager
+        break
+      default:
+        throw new LogicalError("未注册用户")
+    }
+
+    let mixedDb = new DbEntity(C, connection)
+    let mixedUser = await mixedDb.pullBySearching([[['user_id'], '=', userId]])
+    if (!mixedUser) throw new LogicalError("未找到用户的详细记录")
+    
+    return { ...mixedUser, nickname: user.nickname, role: user.role }
   })
 }

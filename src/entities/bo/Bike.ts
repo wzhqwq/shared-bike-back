@@ -1,5 +1,5 @@
 import { PoolConnection } from "mysql"
-import { BIKE_AVAILABLE, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, EXPAND_RATE, REPAIR_FAILED } from "../../constant/values"
+import { BIKE_AVAILABLE, BIKE_NOT_ACTIVATED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, EXPAND_RATE, REPAIR_FAILED, REPAIR_FIXED } from "../../constant/values"
 import { bikeComm } from "../../utils/auth"
 import { LogicalError } from "../../utils/errors"
 import { RawBike } from "../dto/RawBike"
@@ -8,9 +8,8 @@ import { ParkingPoint } from "../dto/ParkingPoint"
 import { MalfunctionRecord, RideRecord } from "../dto/RawRecords"
 import { Section } from "../dto/Section"
 import { DbEntity, DbJoined, RedisDbEntity } from "../entity"
-import { getConfigValue } from "../../utils/cache"
-
-export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
+import { getConfigValue, getSeries } from "../../services/constantService"
+import { posDecimal } from "../../utils/body"
 
 export class Bike {
   public raw: RawBike
@@ -30,7 +29,7 @@ export class Bike {
     this.raw.series_id = seriesId
     this.raw.p_longitude = posLongitude
     this.raw.p_latitude = posLatitude
-    this.raw.status = BIKE_UNAVAILABLE
+    this.raw.status = BIKE_NOT_ACTIVATED
     await this.bikeDb.save(this.raw)
     return this.raw.id
   }
@@ -101,9 +100,9 @@ export class Bike {
     else
       posLatitude = this.raw.p_latitude
 
+    let ppDb = new DbEntity(ParkingPoint)
     if (status === BIKE_AVAILABLE) {
       let sectionDb = new DbEntity(Section)
-      let ppDb = new DbEntity(ParkingPoint)
       let section = await sectionDb.pullBySearching([
         [posLongitude, 'BETWEEN', [['bl_longitude'], ['tr_longitude']]],
         [posLatitude, 'BETWEEN', [['bl_latitude'], ['tr_latitude']]],
@@ -119,23 +118,35 @@ export class Bike {
         ]],
       ])
 
+      if (pp) {
+        let ppDb = new DbEntity(ParkingPoint)
+        await ppDb.update([['bikes_count', [['bikes_count'], '+', 1]]], [[['id'], '=', pp.id]])
+      }
+
       this.raw.parking_point_id = pp?.id ?? null
       this.raw.parking_section_id = section?.id ?? null
       this.raw.health = await this.calculateHealth()
     }
+    else {
+      if (this.raw.parking_point_id) {
+        await ppDb.update([['bikes_count', [['bikes_count'], '-', 1]]], [[['id'], '=', this.raw.parking_point_id]])
+      }
+    }
     await this.bikeDb.save(this.raw)
   }
 
-  public async finishFixing(posLongitude: string, posLatitude: string) {
+  public async finishMaintaining(posLongitude: string, posLatitude: string) {
     await this.update(BIKE_AVAILABLE, posLongitude, posLatitude)
   }
 
   public async calculateHealth() {
+    if (this.raw.mileage > (await getSeries(this.raw.series_id)).mileage_limit) return 0 // 超过报废里程就报废
+
     let recordDb = new DbEntity(MalfunctionRecord)
     let malfunctionDb = new DbEntity(Malfunction)
 
     let records = await new DbJoined(
-      recordDb.asTable([[['bike_id'], '=', this.raw.id], [['status'], '<=', REPAIR_FAILED]]),
+      recordDb.asTable([[['bike_id'], '=', this.raw.id], [['status'], '<', REPAIR_FIXED]]),
       malfunctionDb.asTable(),
       this.connection
     ).list([], ['degree', 'damage_degree', 'malfunction_id'])
@@ -164,8 +175,8 @@ export class Bike {
 
   public async calculateCharge(duration: number, milage: number) {
     if (
-      duration < await getConfigValue(CONFIG_CHARGE_MIN_SECONDS) ||
-      milage < await getConfigValue(CONFIG_CHARGE_MIN_MILAGE)
+      duration < getConfigValue(CONFIG_CHARGE_MIN_SECONDS) ||
+      milage < getConfigValue(CONFIG_CHARGE_MIN_MILAGE)
     ) return 0
     return duration * CONFIG_CHARGE_PER_MINUTE / 60
   }

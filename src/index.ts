@@ -7,6 +7,7 @@ import Result from "./entities/vo/Result"
 import body = require("koa-body")
 import cors = require("@koa/cors")
 import customerRouter from "./routes/customerRoute"
+import { initializeCache } from "./services/constantService"
 
 log4js.configure({
   appenders: {
@@ -59,6 +60,8 @@ root.use("/customer", customerRouter.routes())
 app.use(body())
 app.use(root.routes())
 
-app.listen(80, () => {
-  console.log("启动啦")
+initializeCache().then(() => {
+  app.listen(80, () => {
+    console.log("启动啦")
+  })  
 })
