@@ -7,24 +7,24 @@ export class Section {
   @Column(Number)
   public id: number
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public tr_longitude: string
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public tr_latitude: string
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public bl_longitude: string
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public bl_latitude: string
 
-  @Column(String)
   @Length()
+  @Column(String)
   public name: string
 }
 

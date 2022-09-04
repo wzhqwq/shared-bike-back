@@ -9,14 +9,14 @@ export class Souvenir {
   @Column(String)
   public name: string
 
-  @Column(String)
   @Nullable
+  @Column(String)
   public image_key: string
   
   @Column(Number)
   public price: number
   
-  @Column(Number)
   @Readonly
+  @Column(Number)
   public total_amount: number
 }

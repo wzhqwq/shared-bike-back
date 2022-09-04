@@ -165,11 +165,11 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return (await this.query<TEntity>(
-      "SELECT ?? FROM ??" +
+      `SELECT ${columns ? '??' : '*'} FROM ??` +
         (whereClause ? ` WHERE ${whereClause}` : '') +
         (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
         (limit ? ` LIMIT ${limit}` : ''),
-      [columns ?? '*', tableName, ...additionalValues],
+      [...(columns ? [columns] : []), tableName, ...additionalValues],
     )).map(o => {
       let entity = new this.c()
       let properties = getProperties(entity)
@@ -221,14 +221,14 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     let leftId = e.key, rightId = e.FK.key
 
     let q: QueryOptions = {
-      sql: `SELECT ?? FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
+      sql: `SELECT ${columns ? '??' : '*'} FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
         (whereClause ? ` WHERE ${whereClause}` : '') +
         (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
         (limit ? ` LIMIT ${limit}` : ''),
       nestTables: true
     }
     return (await this.query(q, [
-      columns ?? '*',
+      ...(columns ? [columns] : []),
       ...this.leftTable[1], ...this.rightTable[1],
       leftId, rightId,
       ...additionalValues,
@@ -353,7 +353,9 @@ export function Restriction(...restrictions: Restriction[]) {
   }
 }
 export function Length(min?: number, max?: number) {
-  return Restriction(lengthRestriction(min, max))
+  return function (target: Object, key: string) {
+    getColumns(target).find(k => k.key === key).restrictions.push(lengthRestriction(min, max))
+  }
 }
 export function Foreign<TEntity extends Object>(EntityC: { new (...args: any[]): TEntity }, foreignKey: keyof TEntity) {
   return function (target: Object, key: string) {

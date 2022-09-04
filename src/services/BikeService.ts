@@ -14,7 +14,7 @@ import { ParkingPoint } from "../entities/dto/ParkingPoint"
 import { posDecimal } from "../utils/body"
 import { RawMaintainer } from "../entities/dto/RawUser"
 
-export function listBikes(lastId: number, size: number = 20, filter?: "danger" | "NA" | "all", sectionId?: number) {
+export function listBikes(lastId: number, size: number = 20, filter: "danger" | "all" | "destroyed", sectionId?: number) {
   return transactionWrapper("listBikes", async (connection) => {
     let conditions: ConditionType<RawBike>[] = [[['id'], '<', lastId]]
     switch (filter) {
@@ -24,12 +24,10 @@ export function listBikes(lastId: number, size: number = 20, filter?: "danger" |
           [['status'], '=', BIKE_AVAILABLE],
         )
         break
-      case "NA":
-        conditions.push([['status'], '=', BIKE_UNAVAILABLE])
+      case "destroyed":
+        conditions.push([['status'], '=', BIKE_DESTROYED])
         break
       case "all":
-        break
-      default:
         conditions.push([['status'], '<>', BIKE_DESTROYED])
     }
     if (sectionId) conditions.push([['parking_section_id'], '=', sectionId])
@@ -283,7 +281,7 @@ export function createSection(section: Section) {
   })
 }
 
-export function deleteSection(sectionId: number) {
+export function removeSection(sectionId: number) {
   return transactionWrapper("deleteSection", async (connection) => {
     await new DbEntity(Section, connection).delete([[['id'], '=', sectionId]])
     return null
@@ -299,10 +297,10 @@ export function grantSectionTo(pair: MaintainerSection) {
   })
 }
 
-export function revokeSectionFrom(sectionId: number, maintainerId: number) {
+export function revokeSectionFrom(pair: MaintainerSection) {
   return transactionWrapper("revokeSectionFrom", async (connection) => {
     await new DbEntity(MaintainerSection, connection).delete([
-      [['section_id'], '=', sectionId], [['maintainer_id'], '=', maintainerId]
+      [['section_id'], '=', pair.section_id], [['maintainer_id'], '=', pair.maintainer_id]
     ])
     return null
   })
@@ -320,7 +318,7 @@ export function createParkingPoint(pp: ParkingPoint) {
   })
 }
 
-export function deleteParkingPoint(ppId: number) {
+export function removeParkingPoint(ppId: number) {
   return transactionWrapper("deleteParkingPoint", async (connection) => {
     await new DbEntity(ParkingPoint, connection).delete([[['id'], '=', ppId]])
     return null

@@ -7,12 +7,12 @@ export class ParkingPoint {
   @Column(Number)
   public id: number
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public p_longitude: string
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public p_latitude: string
   
   @Nullable

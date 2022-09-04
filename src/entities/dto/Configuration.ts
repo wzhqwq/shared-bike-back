@@ -6,9 +6,9 @@ export class Configuration {
   @Column(Number)
   public id: number
 
-  @Column(String)
   @Nullable
   @Readonly
+  @Column(String)
   public key: string
 
   @Column(Number)

@@ -13,8 +13,8 @@ export class BikeSeries {
   @Column(Number)
   public mileage_limit: number
 
-  @Column(Number)
   @Readonly
+  @Column(Number)
   public amount: number
 }
 
@@ -28,12 +28,12 @@ export class RawBike {
   @Column(Number, MAINTAINER_USER)
   public series_id: number
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public p_longitude: string
   
-  @Column(String)
   @Restriction('geographical')
+  @Column(String)
   public p_latitude: string
   
   @Column(Number, MAINTAINER_USER)

@@ -1,4 +1,4 @@
-import { Column, Entity, Id, Nullable } from "../entity"
+import { Column, Entity, Id, Length, Nullable, Restriction } from "../entity"
 
 @Entity('Malfunction')
 export class Malfunction {
@@ -6,9 +6,11 @@ export class Malfunction {
   @Column(Number)
   public id: number
   
+  @Length()
   @Column(String)
   public part_name: string
   
+  @Restriction('integer', 'positive')
   @Column(Number)
   public damage_degree: number
 }

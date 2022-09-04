@@ -1,6 +1,6 @@
 import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, MASTER_BILL_FROM_BIKE, MASTER_BILL_FROM_OTHER, MASTER_BILL_FROM_RIDING, MASTER_BILL_FROM_SOUVENIR } from "../constant/values"
 import { BikeSeries } from "../entities/dto/RawBike"
-import { BikeBill, ManagerBill, OtherBill, RideRecord, SouvenirBill } from "../entities/dto/RawRecords"
+import { BikeBill, ExchangeRecord, ManagerBill, OtherBill, RideRecord, SouvenirBill } from "../entities/dto/RawRecords"
 import { Souvenir } from "../entities/dto/Souvenir"
 import { RawCustomer, RawUser } from "../entities/dto/RawUser"
 import { DbEntity, DbJoined } from "../entities/entity"
@@ -133,3 +133,19 @@ export function getBikeStatistics() {
   })
 }
 
+export function listExchanges(customerId: number) {
+  return transactionWrapper('listExchanges', async connection =>
+    new DbEntity(ExchangeRecord, connection).list([[['customer_id'], '=', customerId]])
+  )
+}
+
+export function giveSouvenir(recordId: number, managerId: number) {
+  return transactionWrapper('listExchanges', async connection =>
+    new DbEntity(ExchangeRecord, connection).update([
+      ['given', 1],
+      ['given_by', managerId],
+    ], [
+      [['id'], '=', recordId],
+    ])
+  )
+}

@@ -33,6 +33,7 @@ export class RideRecord {
   @Column(Number)
   public mileage: number
   
+  @Nullable
   @Column(Date)
   public start_time: Date
   
@@ -68,13 +69,13 @@ export class MalfunctionRecord extends BaseRecord {
   @Column(Number)
   public degree: number
   
-  @Column(String)
   @Length(1, 50)
+  @Column(String)
   public description: string
   
   @Nullable
-  @Column(String)
   @Length(1, 50)
+  @Column(String)
   public image_key: string
   
   @Restriction(c => [0, 1, 2, 3].includes(c) ? '' : '应为0、1、2或3')
@@ -109,8 +110,8 @@ export class RechargeRecord extends BaseRecord {
   @Column(Number)
   public customer_id: number
   
-  @Column(String)
   @Restriction('price')
+  @Column(String)
   public amount: string
 }
 
@@ -120,12 +121,12 @@ export class PunishRecord extends BaseRecord {
   @Column(Number)
   public customer_id: number
   
-  @Column(Number)
   @Restriction('integer', 'positive')
+  @Column(Number)
   public points_deducted: number
   
-  @Column(String)
   @Length()
+  @Column(String)
   public reason: string
 }
 
@@ -136,20 +137,20 @@ export class ExchangeRecord extends BaseRecord {
   public souvenir_id: number
   
   @Foreign(RawCustomer, 'user_id')
-  @Column(Number)
   @Nullable
+  @Column(Number)
   public customer_id: number
   
-  @Column(Number)
   @Restriction('integer', 'positive')
+  @Column(Number)
   public amount: number
   
-  @Column(Number)
   @Nullable
+  @Column(Number)
   public given: number
   
-  @Column(Number)
   @Nullable
+  @Column(Number)
   public given_by: number
 }
 
@@ -164,8 +165,8 @@ export class DestroyRecord extends BaseRecord {
   @Column(Number)
   public manager_id: number
   
-  @Column(String)
   @Length()
+  @Column(String)
   public reason: string
 }
 
@@ -175,11 +176,12 @@ class BaseBill {
   @Column(Number)
   public id: number
   
+  @Nullable
   @Column(Date)
   public time: Date
   
-  @Column(String)
   @Restriction('price')
+  @Column(String)
   public expense: string
   
   @Foreign(RawManager, 'user_id')
@@ -194,8 +196,8 @@ export class BikeBill extends BaseBill {
   @Column(Number)
   public series_id: number
   
-  @Column(Number)
   @Restriction('integer', 'positive')
+  @Column(Number)
   public amount: number
 }
 
@@ -205,15 +207,15 @@ export class SouvenirBill extends BaseBill {
   @Column(Number)
   public souvenir_id: number
   
-  @Column(Number)
   @Restriction('integer', 'positive')
+  @Column(Number)
   public amount: number
 }
 
 @Entity("OtherBill")
 export class OtherBill extends BaseBill {
-  @Column(String)
   @Length()
+  @Column(String)
   public reason: string
 }
 
@@ -223,6 +225,7 @@ class BaseMainRecord {
   @Column(Number)
   public id: number
   
+  @Nullable
   @Column(Date)
   public time: Date
   
@@ -239,8 +242,8 @@ export class DepositRecord extends BaseMainRecord {
   @Column(Number)
   public customer_id: number
   
-  @Column(String)
   @Restriction('price')
+  @Column(String)
   public change: string
 }
 
@@ -250,8 +253,8 @@ export class PointRecord extends BaseMainRecord {
   @Column(Number)
   public customer_id: number
   
-  @Column(Number)
   @Restriction('integer', 'positive')
+  @Column(Number)
   public change: number
 }
 
@@ -261,8 +264,8 @@ export class ManagerBill extends BaseMainRecord {
   @Column(Number)
   public user_id: number
   
-  @Column(String)
   @Restriction('price')
+  @Column(String)
   public change: string
 }
 
@@ -273,18 +276,20 @@ export class SignUpRequest extends BaseRecord {
   @Column(Number)
   public user_id: number
   
+  @Restriction(c => [0, 1].includes(c) ? '' : '应为0或1')
   @Column(Number)
   public type: number
   
-  @Column(String)
   @Length()
+  @Column(String)
   public phone: string
   
-  @Column(String)
   @Length(1, 10)
+  @Column(String)
   public name: string
   
   @Nullable
+  @Restriction(c => [0, 1].includes(c) ? '' : '应为0、1或2')
   @Column(Number)
   public status: number
 }

@@ -1,5 +1,5 @@
 import crypto = require("crypto")
-import { CUSTOMER_USER, MAINTAINER_USER, MANAGER_USER, PASSWORD_SALT, PASSWORD_SECRET } from "../constant/values"
+import { CUSTOMER_USER, MAINTAINER_USER, MANAGER_USER, PASSWORD_SALT, PASSWORD_SECRET, REQUEST_REJECTED, REQUEST_UNHANDLED } from "../constant/values"
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawUser, RawMaintainer, RawManager, RawCustomer } from "../entities/dto/RawUser"
 import { DbEntity, DbJoined } from "../entities/entity"
@@ -56,17 +56,17 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       let recordDb = new DbEntity(SignUpRequest, connection)
       let record = await recordDb.pullBySearching([[['user_id'], '=', id]])
       if (!record) throw new LogicalError("未找到角色分配请求")
-      if (record.status == 0) throw new LogicalError("角色分配请求未得到处理")
-      if (record.status == 2) throw new LogicalError("角色分配请求被拒绝")
+      if (record.status == REQUEST_UNHANDLED) throw new LogicalError("角色分配请求未得到处理")
+      if (record.status == REQUEST_REJECTED) throw new LogicalError("角色分配请求被拒绝")
 
       role = MAINTAINER_USER + record.type
 
-      let mixedUser = record.type === 0 ? new RawMaintainer() : new RawManager()
+      let mixedUser = role === MAINTAINER_USER ? new RawMaintainer() : new RawManager()
       mixedUser.user_id = record.user_id
       mixedUser.phone = record.phone
       mixedUser.name = record.name
 
-      let mixedDb = new DbEntity(record.type === 0 ? RawMaintainer : RawManager)
+      let mixedDb = new DbEntity(role === MAINTAINER_USER ? RawMaintainer : RawManager)
       await mixedDb.append(mixedUser)
     }
     let userDb = new DbEntity(RawUser, connection)
@@ -86,7 +86,7 @@ export function requestToBe(request: SignUpRequest) {
     else {
       requestInDb = request
     }
-    requestInDb.status = 0
+    requestInDb.status = REQUEST_UNHANDLED
     requestInDb.time = new Date()
     await recordDb.append(requestInDb)
   })

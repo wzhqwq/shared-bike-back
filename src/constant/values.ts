@@ -5,6 +5,10 @@ export const JWT_SECRET = 'u631eqsw91i6'
 export const SEARCH_RANGE = 0.001
 export const EXPAND_RATE = 0.0001
 
+export const REQUEST_UNHANDLED = 0
+export const REQUEST_ACCEPTED = 1
+export const REQUEST_REJECTED = 2
+
 export const UNLINKED_USER = 0
 export const CUSTOMER_USER = 1
 export const MAINTAINER_USER = 2
