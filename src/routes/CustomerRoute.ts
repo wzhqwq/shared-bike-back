@@ -1,9 +1,11 @@
 import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
 import { Paginator, paginatorParams } from "../entities/dto/Paginator"
+import { RawBike } from "../entities/dto/RawBike"
 import { ExchangeRecord, MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
+import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
+import { getBikeBySeriesNo, listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/BikeService"
 import { listSouvenirs } from "../services/constantService"
 import { exchange, listDepositChanges, listExchangeRecords, listPointChanges, recharge } from "../services/customerPropertyService"
 import { roleOnly } from "../utils/auth"
@@ -15,11 +17,17 @@ customerRouter.use(roleOnly(CUSTOMER_USER))
 const bikeRouter = new Router()
 
 bikeRouter.get("/list", checkBody([
-  { key: 'longitude', restrictions: ['number'] },
-  { key: 'latitude', restrictions: ['number'] },
+  { key: 'longitude', restrictions: ['geographical'] },
+  { key: 'latitude', restrictions: ['geographical'] },
 ]), async ctx => {
   let { longitude, latitude } = ctx.request.body as { longitude: number, latitude: number }
   ctx.body = Result.success(await listBikesAround(longitude, latitude, CUSTOMER_USER))
+})
+
+bikeRouter.get("/find", checkBody([
+  { key: "series_no", restrictions: getRestrictions(RawBike, 'series_no') }
+]), async ctx => {
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.request.body.series_no))
 })
 
 bikeRouter.post("/unlock", checkBody([
@@ -49,31 +57,31 @@ propertyRouter.get("/list/:type", checkBody(paginatorParams), async ctx => {
   let type = ctx.params.type as "points" | "deposit"
   switch(type) {
     case 'points':
-      ctx.body = await listPointChanges(ctx.state.user.id, lastId, size)
+      ctx.body = Result.success(await listPointChanges(ctx.state.user.id, lastId, size))
       break
     case 'deposit':
-      ctx.body = await listDepositChanges(ctx.state.user.id, lastId, size)
+      ctx.body = Result.success(await listDepositChanges(ctx.state.user.id, lastId, size))
       break
   }
 })
 
 propertyRouter.post("/recharge", checkBodyAsEntity(RechargeRecord), async ctx => {
-  ctx.body = await recharge(ctx.request.body, ctx.state.user.id)
+  ctx.body = Result.success(await recharge(ctx.request.body, ctx.state.user.id))
 })
 
 let souvenirRouter = new Router()
 
 souvenirRouter.get("/list_items", async ctx => {
-  ctx.body = await listSouvenirs()
+  ctx.body = Result.success(await listSouvenirs())
 })
 
 souvenirRouter.get("/list_exchanged", checkBody(paginatorParams), async ctx => {
   let { lastId, size } = ctx.request.body as Paginator
-  ctx.body = await listExchangeRecords(ctx.state.user.id, lastId, size)
+  ctx.body = Result.success(await listExchangeRecords(ctx.state.user.id, lastId, size))
 })
 
 souvenirRouter.post("/exchange", checkBodyAsEntity(ExchangeRecord), async ctx => {
-  ctx.body = await exchange(ctx.request.body, ctx.state.user.id)
+  ctx.body = Result.success(await exchange(ctx.request.body, ctx.state.user.id))
 })
 
 customerRouter.use('/bike', bikeRouter.routes())

@@ -45,7 +45,7 @@ authRouter.post('/edit_profile', checkBody([
 
   if (data.nickname) basicUser = await editNickname(data.nickname, user.id)
   if (data.phone && data.name) extraUser = await editProfile(data.name, data.phone, user.id, user.role)
-  ctx.body = { basicUser, extraUser }
+  ctx.body = Result.success({ basicUser, extraUser })
 })
 
 export default authRouter

@@ -29,6 +29,10 @@ export class RawBike {
   @Id
   @Column(Number)
   public id: number
+
+  @Length()
+  @Column(String)
+  public series_no: string
   
   @Foreign(BikeSeries, "id")
   @Column(Number, MAINTAINER_USER)

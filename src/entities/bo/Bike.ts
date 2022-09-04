@@ -25,9 +25,10 @@ export class Bike {
     return this
   }
 
-  public async newBike(seriesId: number, posLongitude: string, posLatitude: string) {
+  public async newBike(seriesId: number, posLongitude: string, posLatitude: string, seriesNo: string) {
     this.raw = new RawBike()
     this.raw.series_id = seriesId
+    this.raw.series_no = seriesNo
     this.raw.p_longitude = posLongitude
     this.raw.p_latitude = posLatitude
     this.raw.status = BIKE_NOT_ACTIVATED

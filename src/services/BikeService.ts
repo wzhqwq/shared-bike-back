@@ -72,7 +72,13 @@ export function listBikesAround(posLongitude: number, posLatitude: number, role:
 }
 
 export function getBike(bikeId: number) {
-  transactionWrapper("getBike", async connection => (await new Bike(connection).fetchBike(bikeId)).raw)
+  return transactionWrapper("getBike", async connection => (await new Bike(connection).fetchBike(bikeId)).raw)
+}
+
+export function getBikeBySeriesNo(seriesNo: string) {
+  return transactionWrapper("getBikeBySeriesNo", async connection =>
+    await new DbEntity(RawBike, connection).pullBySearching([[['series_no'], '=', seriesNo]])
+  )
 }
 
 export function tryUnlockBike(customerId: number, bikeId: number, encrypted: string) {
@@ -212,12 +218,12 @@ export function registerBike(encrypted: string, seriesId: number) {
 
     let messages = bikeComm.decrypt(encrypted)
     if (messages.length !== 3) throw new LogicalError("单车识别失败")
-    let [token, posLongitude, posLatitude] = messages
-    if (token.length !== 20 || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
+    let [seriesNo, posLongitude, posLatitude] = messages
+    if (seriesNo.length !== 20 || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
       throw new LogicalError("单车识别失败")
 
-    let bikeId = await new Bike(connection).newBike(seriesId, posLongitude, posLatitude)
-    return bikeComm.encrypt([token, bikeId.toString()])
+    let bikeId = await new Bike(connection).newBike(seriesId, posLongitude, posLatitude, seriesNo)
+    return bikeComm.encrypt([seriesNo, bikeId.toString()])
   })
 }
 
