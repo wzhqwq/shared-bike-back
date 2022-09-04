@@ -27,7 +27,7 @@ bikeRouter.post("/unlock", checkBody([
   { key: 'encrypted', restrictions: ['string'] },
 ]), async ctx => {
   let { bike_id, encrypted } = ctx.request.body as { bike_id: number, encrypted: string }
-  ctx.body = Result.success(await tryUnlockBike(bike_id, encrypted))
+  ctx.body = Result.success(await tryUnlockBike(ctx.state.user.id, bike_id, encrypted))
 })
 
 bikeRouter.post("/update", checkBody([

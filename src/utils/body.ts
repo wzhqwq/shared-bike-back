@@ -1,10 +1,11 @@
 import Router = require("@koa/router")
 import { EntityColumn, getColumns } from "../entities/entity"
 
-type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geographical" | "price"
+type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geographical" | "price" | "imageKey"
 
 export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
 export const priceDecimal = /^\d{,8}\.\d{2}$/
+export const imageKeyName = /^[0-9a-z]*$/
 
 const allRestrictions: { [key in BuiltInRestriction]: (o: any) => string } = {
   string: o => typeof o === "string" ? '' : '应为字符串',
@@ -12,7 +13,8 @@ const allRestrictions: { [key in BuiltInRestriction]: (o: any) => string } = {
   integer: o => Number.isInteger(o) ? '' : '应为整数',
   positive: o => o > 0 ? '' : '应为正数',
   geographical: o => posDecimal.test(o) ? '' : '小数位错误',
-  price: o => priceDecimal.test(o) ? '' : '小数位错误'
+  price: o => priceDecimal.test(o) ? '' : '小数位错误',
+  imageKey: o => imageKeyName.test(o) ? '' : '编号格式错误'
 }
 
 export type Restriction = (BuiltInRestriction | ((o: any) => string))

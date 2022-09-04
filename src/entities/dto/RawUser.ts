@@ -1,4 +1,4 @@
-import { Column, Entity, Foreign, Id, Length, Nullable } from "../entity"
+import { Column, Entity, Foreign, Id, Length, Nullable, Readonly, Restriction } from "../entity"
 
 @Entity('User')
 export class RawUser {
@@ -18,6 +18,12 @@ export class RawUser {
   @Length(1, 100)
   @Column(String)
   public password: string
+
+  @Length(1, 50)
+  @Nullable
+  @Restriction('imageKey')
+  @Column(String)
+  public avatar_key: string
 }
 
 @Entity('Customer')
@@ -28,17 +34,15 @@ export class RawCustomer {
   @Column(Number)
   public user_id: number
 
-  @Nullable
   @Column(Number)
   public points: number
 
-  @Nullable
-  @Column(Number)
-  public deposit: number
+  @Restriction('price')
+  @Column(String)
+  public deposit: string
 
-  @Nullable
-  @Column(Number)
-  public ban_time: number
+  @Column(Date)
+  public ban_time: Date
 }
 
 @Entity('Maintainer')

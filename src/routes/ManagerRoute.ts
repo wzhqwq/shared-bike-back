@@ -11,7 +11,7 @@ import { getRestrictions } from "../entities/entity";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/BikeService";
 import { addMalfunction, addSeries, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
-import { listUsers, listSignUpRequests, handleSignUpRequest } from "../services/userService";
+import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer } from "../services/userService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList } from "../utils/body";
 
@@ -51,25 +51,31 @@ propertyRouter.post('/separated/add/other', checkBodyAsEntity(OtherBill), async 
   ctx.body = await recordOtherBill(ctx.request.body, ctx.state.user.id)
 })
 
-const staffRouter = new Router()
+const userRouter = new Router()
 
-staffRouter.get('/staff/list/:category', checkBody(paginatorParams), async ctx => {
+userRouter.get('/list/:category', checkBody(paginatorParams), async ctx => {
   let category = ctx.params.category as 'customer' | 'manager' | 'maintainer'
   let body = ctx.request.body as Paginator
   ctx.body = await listUsers(category, body.lastId, body.size)
 })
 
-staffRouter.get('/request/list', checkBody(paginatorParams), async ctx => {
+userRouter.get('/request/list', checkBody(paginatorParams), async ctx => {
   let body = ctx.request.body as Paginator
   ctx.body = await listSignUpRequests(body.lastId, body.size)
 })
 
-staffRouter.post('/request/handle', checkBody([
+userRouter.post('/request/handle', checkBody([
   { key: 'record_id', restrictions: ['number', 'integer', 'positive']},
   { key: 'status', restrictions: getRestrictions(SignUpRequest, 'status')},
 ]), async ctx => {
   let body = ctx.request.body as { record_id: number, status: number }
   ctx.body = await handleSignUpRequest(body.record_id, body.status)
+})
+
+userRouter.post('/lift_the_ban', checkBody([
+  { key: 'customer_id', restrictions: ['number', 'integer', 'positive']},
+]), async ctx => {
+  ctx.body = await liftTheBanOfCustomer(ctx.request.body.customer_id)
 })
 
 const bikeRouter = new Router()
@@ -202,7 +208,7 @@ configRouter.post('/modify', checkBodyAsEntityList(Configuration), async ctx => 
 })
 
 managerRouter.use('property', propertyRouter.routes())
-managerRouter.use('staff', staffRouter.routes())
+managerRouter.use('user', userRouter.routes())
 managerRouter.use('bike', bikeRouter.routes())
 managerRouter.use('souvenir', souvenirRouter.routes())
 managerRouter.use('section', sectionRouter.routes())

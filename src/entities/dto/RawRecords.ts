@@ -75,6 +75,7 @@ export class MalfunctionRecord extends BaseRecord {
   
   @Nullable
   @Length(1, 50)
+  @Restriction('imageKey')
   @Column(String)
   public image_key: string
   

@@ -1,6 +1,7 @@
 export const PASSWORD_SALT = 'shared-bike-system'
 export const PASSWORD_SECRET = 'u56305obvriw'
 export const JWT_SECRET = 'u631eqsw91i6'
+export const IMAGE_BASE = '/usr/images'
 
 export const SEARCH_RANGE = 0.001
 export const EXPAND_RATE = 0.0001
@@ -35,7 +36,12 @@ export const CONFIG_REWARD_DESCRIPTION = 2
 export const CONFIG_CHARGE_MIN_SECONDS = 3
 export const CONFIG_CHARGE_MIN_MILAGE = 4
 export const CONFIG_CHARGE_PER_MINUTE = 5
-export const CONFIG_SAFE_HEALTH = 40
+export const CONFIG_SAFE_HEALTH = 6
+export const CONFIG_TERMINATE_MINUTE = 7
+export const CONFIG_OUT_OF_PP_PUNISH_POINTS = 8
+export const CONFIG_TIME_EXCEEDED_PUNISH_POINTS = 9
+export const CONFIG_BAN_MAX_POINTS = 10
+export const CONFIG_BAN_DAYS = 11
 
 export const MASTER_BILL_FROM_RIDING = 0
 export const MASTER_BILL_FROM_BIKE = 1

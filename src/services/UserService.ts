@@ -89,6 +89,7 @@ export function requestToBe(request: SignUpRequest) {
     requestInDb.status = REQUEST_UNHANDLED
     requestInDb.time = new Date()
     await recordDb.append(requestInDb)
+    return null
   })
 }
 
@@ -133,8 +134,17 @@ export function editProfile(name: string, phone: string, id: number, role: numbe
 export function editNickname(nickname: string, id: number) {
   return transactionWrapper("editNickname", async connection => {
     let db = new DbEntity(RawUser, connection)
-    if (await db.pullBySearching([[['nickname'], '=', nickname], [['id'], '<>', id]])) throw new LogicalError("昵称已被使用")
+    if (await db.pullBySearching([[['nickname'], '=', nickname], [['id'], '<>', id]]))
+      throw new LogicalError("昵称已被使用")
     await db.update([['nickname', nickname]], [[['id'], '=', id]])
+    return null
+  })
+}
+
+export function editAvatar(key: string, id: number) {
+  return transactionWrapper("editAvatar", async connection => {
+    let db = new DbEntity(RawUser, connection)
+    await db.update([['avatar_key', key]], [[['id'], '=', id]])
     return null
   })
 }
@@ -201,5 +211,12 @@ export function getUser(userId: number) {
     if (!mixedUser) throw new LogicalError("未找到用户的详细记录")
     
     return { ...mixedUser, nickname: user.nickname, role: user.role }
+  })
+}
+
+export function liftTheBanOfCustomer(customerId: number) {
+  return transactionWrapper("liftTheBanOfCustomer", async connection => {
+    return await new DbEntity(RawCustomer, connection)
+      .update([['ban_time', null]], [[['user_id'], '=', customerId]])
   })
 }

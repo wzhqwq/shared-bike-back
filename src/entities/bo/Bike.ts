@@ -1,5 +1,5 @@
 import { PoolConnection } from "mysql"
-import { BIKE_AVAILABLE, BIKE_NOT_ACTIVATED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, EXPAND_RATE, REPAIR_FAILED, REPAIR_FIXED } from "../../constant/values"
+import { BIKE_AVAILABLE, BIKE_NOT_ACTIVATED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, CONFIG_OUT_OF_PP_PUNISH_POINTS, EXPAND_RATE, REPAIR_FAILED, REPAIR_FIXED } from "../../constant/values"
 import { bikeComm } from "../../utils/auth"
 import { LogicalError } from "../../utils/errors"
 import { RawBike } from "../dto/RawBike"
@@ -10,6 +10,7 @@ import { Section } from "../dto/Section"
 import { DbEntity, DbJoined, RedisDbEntity } from "../entity"
 import { getConfigValue, getSeries } from "../../services/constantService"
 import { posDecimal } from "../../utils/body"
+import { punishAfterwards } from "../../services/customerPropertyService"
 
 export class Bike {
   public raw: RawBike
@@ -71,6 +72,8 @@ export class Bike {
       return bikeComm.encrypt([record.id.toString()])
     }
     if (this.raw.status === BIKE_OCCUPIED) {
+      await this.update(status, posLongitude, posLatitude)
+
       let record = await recordDb.get(this.raw.id)
       if (!record) throw new LogicalError("查询记录失败")
       record.mileage = mileage
@@ -80,9 +83,12 @@ export class Bike {
         // 关锁成功
         record.end_time = new Date()
         record.charge = charge.toFixed(2)
+        if (!this.raw.parking_point_id) {
+          // 不在停车点停车扣积分
+          punishAfterwards(userId, getConfigValue(CONFIG_OUT_OF_PP_PUNISH_POINTS), '未在停车点停车')
+        }
       }
 
-      await this.update(status, posLongitude, posLatitude)
       await recordDb.save(record)
       return `${duration.toFixed(0)},${charge.toFixed(2)}`
     }

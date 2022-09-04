@@ -246,7 +246,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
 export type BooleanOperatorType = '=' | '>' | '<' | '>=' | '<=' | '<>' | 'IS' | 'IS NOT'
 export type CalculatingOperatorType = '+' | '-' | '*' | '/'
 export type AggregationFnType = 'COUNT' | 'SUM' | 'AVG'
-export type ExpressionType<TEntity extends Object> = [keyof TEntity] | number | string | null |
+export type ExpressionType<TEntity extends Object> = [keyof TEntity] | number | string | null | Date |
   { fn: AggregationFnType, key: ExpressionType<TEntity> | '*' } |
   [ExpressionType<TEntity>, CalculatingOperatorType, ExpressionType<TEntity>]
 
@@ -278,7 +278,7 @@ function parseExpression<TEntity extends Object>(expression: ExpressionType<TEnt
     let r = parseExpression(expression[2])
     return [`(${l[0]} ${expression[1]} ${r[0]})`, [...l[1], ...r[1]]]
   }
-  if (typeof expression == 'object') {
+  if (typeof expression == 'object' && !(expression instanceof Date)) {
     return [`${expression.fn}(${expression.key.toString()})`, [expression.key.toString()]]
   }
   return ['?', [expression]]

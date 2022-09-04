@@ -4,6 +4,8 @@ import { RawCustomer } from "../entities/dto/RawUser";
 import { DbEntity, DbJoined } from "../entities/entity";
 import { transactionWrapper } from "../utils/db";
 import { LogicalError } from "../utils/errors";
+import { getConfigValue } from "./constantService";
+import { CONFIG_BAN_DAYS, CONFIG_BAN_MAX_POINTS } from "../constant/values";
 
 export function listDepositChanges(customerId: number, lastId: number, size: number = 20) {
   return transactionWrapper("listDepositChanges", async connection => {
@@ -76,7 +78,24 @@ export function punish(record: PunishRecord) {
     let punishDb = new DbEntity(PunishRecord, connection)
     record.time = new Date()
     await punishDb.append(record)
+
+    customer = await customerDb.pullBySearching([[['user_id'], '=', record.customer_id]])
+    if (!customer) throw new LogicalError("用户不存在")
+    if (customer.points <= getConfigValue(CONFIG_BAN_MAX_POINTS)) {
+      // 点数太低就关小黑屋
+      let banTime = new Date(new Date().valueOf() + getConfigValue(CONFIG_BAN_DAYS) * 24 * 3600 * 1000)
+      customerDb.update([['ban_time', banTime]], [[['user_id'], '=', record.customer_id]])
+    }
     
     return record
   })
+}
+
+export function punishAfterwards(customerId: number, points: number, reason: string) {
+  let record = new PunishRecord()
+  record.customer_id = customerId
+  record.reason = reason
+  record.points_deducted = points
+  record.time = new Date()
+  setImmediate(() => punish(record))
 }

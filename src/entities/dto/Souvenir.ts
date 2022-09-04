@@ -1,4 +1,4 @@
-import { Column, Entity, Id, Nullable, Readonly } from "../entity"
+import { Column, Entity, Id, Nullable, Readonly, Restriction } from "../entity"
 
 @Entity("Souvenir")
 export class Souvenir {
@@ -10,6 +10,7 @@ export class Souvenir {
   public name: string
 
   @Nullable
+  @Restriction('imageKey')
   @Column(String)
   public image_key: string
   

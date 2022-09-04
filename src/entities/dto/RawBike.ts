@@ -1,5 +1,5 @@
 import { MAINTAINER_USER } from "../../constant/values"
-import { Column, Entity, Foreign, Id, Nullable, Readonly, Restriction } from "../entity"
+import { Column, Entity, Foreign, Id, Length, Nullable, Readonly, Restriction } from "../entity"
 
 @Entity("BikeSeries")
 export class BikeSeries {
@@ -7,11 +7,17 @@ export class BikeSeries {
   @Column(Number)
   public id: number
 
+  @Length()
   @Column(String)
   public name: string
 
+  @Restriction('positive')
   @Column(Number)
   public mileage_limit: number
+
+  @Restriction('price')
+  @Column(String)
+  public rent: string
 
   @Readonly
   @Column(Number)

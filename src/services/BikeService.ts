@@ -5,14 +5,14 @@ import { Malfunction } from "../entities/dto/Malfunction"
 import { DestroyRecord, MalfunctionRecord, RepairRecord, RideRecord } from "../entities/dto/RawRecords"
 import { ConditionType, DbEntity, DbJoined } from "../entities/entity"
 import { listHide } from "../entities/vo/Result"
-import { transactionWrapper } from "../utils/db"
+import { query, transactionWrapper } from "../utils/db"
 import { LogicalError } from "../utils/errors"
 import { getConfigValue, cachedMalfunctions, cachedSeriesList, getSeries, decreaseSeriesCount, increaseSeriesCount } from "./constantService"
 import { bikeComm } from "../utils/auth"
 import { MaintainerSection, Section } from "../entities/dto/Section"
 import { ParkingPoint } from "../entities/dto/ParkingPoint"
 import { posDecimal } from "../utils/body"
-import { RawMaintainer } from "../entities/dto/RawUser"
+import { RawCustomer, RawMaintainer } from "../entities/dto/RawUser"
 
 export function listBikes(lastId: number, size: number = 20, filter: "danger" | "all" | "destroyed", sectionId?: number) {
   return transactionWrapper("listBikes", async (connection) => {
@@ -75,9 +75,23 @@ export function getBike(bikeId: number) {
   transactionWrapper("getBike", async connection => (await new Bike(connection).fetchBike(bikeId)).raw)
 }
 
-export function tryUnlockBike(bikeId: number, encrypted: string) {
+export function tryUnlockBike(customerId: number, bikeId: number, encrypted: string) {
   return transactionWrapper("tryUnlockBike", async (connection) => {
     let bike = await (new Bike(connection).fetchBike(bikeId))
+
+    let user = await new DbEntity(RawCustomer, connection).pullBySearching([[['user_id'], '=', customerId]])
+    if (!user) throw new LogicalError('用户不存在')
+
+    if (user.ban_time && user.ban_time < new Date())
+      throw new LogicalError('您因为点数过低被封禁了一段时间，无法骑车，您可以联系管理员解封')
+
+    let series = await new DbEntity(BikeSeries, connection).pullBySearching([[['id'], '=', bike.raw.series_id]])
+    if (!series) throw new LogicalError('单车信息有误，请换一辆')
+
+    if (parseFloat(user.deposit) < parseFloat(series.rent))
+      throw new LogicalError('账户内存款不足，骑行该单车需要押金￥' + series.rent)
+    
+
     return await bike.unlock(encrypted)
   })
 }
