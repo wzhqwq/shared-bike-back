@@ -120,7 +120,7 @@ export async function transactionWrapper<T>(
 // redis
 
 export const redisClient = createClient({
-  url: `redis://${redisHost}:6380`
+  url: `redis://${redisHost}:6379`
 })
 
 redisClient.connect()
