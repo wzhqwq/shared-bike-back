@@ -47,10 +47,10 @@ class BikeCommunication {
   }
 
   public encrypt(values: string[]) {
-    return crypto.privateEncrypt(this.privateKey, Buffer.from(values.join('$'), 'ascii')).toString('base64')
+    return crypto.privateEncrypt(this.privateKey, Buffer.from(values.join('$'), 'ascii')).toString('ascii')
   }
   public decrypt(encrypted: string) {
-    return crypto.privateDecrypt(this.privateKey, Buffer.from(encrypted, 'base64')).toString('ascii').split('$')
+    return crypto.privateDecrypt(this.privateKey, Buffer.from(encrypted, 'ascii')).toString('ascii').split('$')
   }
 }
 

@@ -60,10 +60,15 @@ let root = new Router()
 root.get("/", async ctx => {
   ctx.body = "テスト、テスト"
 })
+authRouter.use(body())
+customerRouter.use(body())
+maintainerRouter.use(body())
+managerRouter.use(body())
 root.use("/auth", authRouter.routes())
 root.use("/customer", customerRouter.routes())
 root.use("/maintainer", maintainerRouter.routes())
 root.use("/manager", managerRouter.routes())
+
 root.use("/image", imageRouter.routes())
 
 root.get('/encryption/public_key', async ctx => {
@@ -71,7 +76,6 @@ root.get('/encryption/public_key', async ctx => {
   ctx.body = await fs.readFile(publicPath)
 })
 
-app.use(body())
 app.use(root.routes())
 
 initializeCache().then(initializeFs).then(() => {
