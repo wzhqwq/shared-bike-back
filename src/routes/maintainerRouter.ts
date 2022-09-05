@@ -4,9 +4,9 @@ import { GeoPoint, geoPointParams } from "../entities/dto/Geographical";
 import { Paginator, paginatorParams } from "../entities/dto/Paginator";
 import { RepairRecord } from "../entities/dto/RawRecords";
 import Result from "../entities/vo/Result";
-import { activateBike, checkAndPlan, finishMaintaining, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listSection, registerBike, startMaintaining } from "../services/bikeService";
+import { activateBike, checkAndPlan, finishMaintaining, getBikeBySeriesNo, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listSection, registerBike, startMaintaining } from "../services/bikeService";
 import { roleOnly } from "../utils/auth";
-import { checkBody, checkBodyAsEntity, checkParams } from "../utils/body";
+import { checkBody, checkBodyAsEntity, checkParams, lengthRestriction } from "../utils/body";
 
 const maintainerRouter = new Router()
 maintainerRouter.use(roleOnly(MAINTAINER_USER))
@@ -21,16 +21,39 @@ maintainerRouter.get('/list_parking_points', checkParams([
   ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.params.section_id)))
 })
 
-maintainerRouter.get('/bike/list', checkParams([
+const bikeRouter = new Router()
+
+bikeRouter.get('/list', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
   ctx.body = Result.success(await listBikesInSection(parseInt(ctx.params.section_id)))
 })
 
-maintainerRouter.get('/bike/list_to_move', checkParams([
+bikeRouter.get('/list_to_move', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
   ctx.body = Result.success(await checkAndPlan(parseInt(ctx.params.section_id)))
+})
+
+bikeRouter.get("/find", checkParams([
+  { key: "series_no", restrictions: [lengthRestriction()] }
+]), async ctx => {
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.params.series_no))
+})
+
+bikeRouter.post('/register', checkBody([
+  { key: 'encrypted', restrictions: ['string'] },
+  { key: 'series_id', restrictions: ['number', 'integer', 'positive'] },
+]), async ctx => {
+  let body = ctx.request.body as { encrypted: string, series_id: number }
+  ctx.body = Result.success(await registerBike(body.encrypted, body.series_id))
+})
+
+bikeRouter.post('/activate', checkBody([
+  { key: 'encrypted', restrictions: ['string'] },
+]), async ctx => {
+  let body = ctx.request.body as { encrypted: string }
+  ctx.body = Result.success(await activateBike(body.encrypted))
 })
 
 maintainerRouter.post('/maintain/start', checkBody([
@@ -65,19 +88,6 @@ maintainerRouter.get("/repair/list", checkParams(paginatorParams), async ctx => 
   ctx.body = Result.success(await listRepair(ctx.state.user.id, parseInt(lastId), parseInt(size)))
 })
 
-maintainerRouter.post('/bike/register', checkBody([
-  { key: 'encrypted', restrictions: ['string'] },
-  { key: 'series_id', restrictions: ['number', 'integer', 'positive'] },
-]), async ctx => {
-  let body = ctx.request.body as { encrypted: string, series_id: number }
-  ctx.body = Result.success(await registerBike(body.encrypted, body.series_id))
-})
-
-maintainerRouter.post('/bike/activate', checkBody([
-  { key: 'encrypted', restrictions: ['string'] },
-]), async ctx => {
-  let body = ctx.request.body as { encrypted: string }
-  ctx.body = Result.success(await activateBike(body.encrypted))
-})
+maintainerRouter.use('/bike', bikeRouter.routes())
 
 export default maintainerRouter
