@@ -3,7 +3,7 @@ import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
 import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { createSpecificUser, editNickname, editPassword, editProfile, getUser, requestToBe, signIn, signUp } from "../services/userService"
+import { createSpecificUser, editNickname, editPassword, editProfile, getUser, mixUser, requestToBe, signIn, signUp } from "../services/userService"
 import { checkBody, checkBodyAsEntity, lengthRestriction } from "../utils/body"
 
 let authRouter = new Router()
@@ -45,7 +45,7 @@ authRouter.post('/edit_profile', checkBody([
 
   if (data.nickname) basicUser = await editNickname(data.nickname, user.id)
   if (data.phone && data.name) extraUser = await editProfile(data.name, data.phone, user.id, user.role)
-  ctx.body = Result.success({ basicUser, extraUser })
+  ctx.body = Result.success(mixUser(basicUser, extraUser))
 })
 
 authRouter.post('/edit_password', checkBody([

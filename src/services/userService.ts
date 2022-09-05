@@ -3,6 +3,7 @@ import { CUSTOMER_USER, MAINTAINER_USER, MANAGER_USER, PASSWORD_SALT, PASSWORD_S
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawUser, RawMaintainer, RawManager, RawCustomer } from "../entities/dto/RawUser"
 import { DbEntity, DbJoined } from "../entities/entity"
+import { hide } from "../entities/vo/Result"
 import { signJwt } from "../utils/auth"
 import { query, transactionWrapper } from "../utils/db"
 import { LogicalError } from "../utils/errors"
@@ -160,8 +161,9 @@ export function editPassword(password: string, oldPassword: string, id: number) 
   })
 }
 
-function mix(base: RawUser, extended: RawCustomer | RawMaintainer | RawManager) {
-  return { ...extended, nickname: base.nickname, role: base.role, avatar_key: base.avatar_key }
+export function mixUser(base: RawUser, extended: RawCustomer | RawMaintainer | RawManager) {
+  hide(base, 1)
+  return { ...base, extended }
 }
 
 export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: number, size: number = 20) {
@@ -185,7 +187,7 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
       new DbEntity(RawUser).asTable(),
       connection
     )
-    return (await db.list()).map(([x, u]) => mix(u, x))
+    return (await db.list()).map(([x, u]) => mixUser(u, x))
   })
 }
 
@@ -214,7 +216,7 @@ export function getUser(userId: number) {
     let extendedUser = await extendedDb.pullBySearching([[['user_id'], '=', userId]])
     if (!extendedUser) throw new LogicalError("未找到用户的详细记录")
     
-    return mix(user, extendedUser)
+    return mixUser(user, extendedUser)
   })
 }
 

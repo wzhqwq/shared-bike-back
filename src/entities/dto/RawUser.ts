@@ -16,7 +16,7 @@ export class RawUser {
   public nickname: string
 
   @Length(1, 100)
-  @Column(String)
+  @Column(String, 100)
   public password: string
 
   @Length(1, 50)
