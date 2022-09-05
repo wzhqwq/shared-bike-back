@@ -160,6 +160,10 @@ export function editPassword(password: string, oldPassword: string, id: number) 
   })
 }
 
+function mix(base: RawUser, extended: RawCustomer | RawMaintainer | RawManager) {
+  return { ...extended, nickname: base.nickname, role: base.role, avatar_key: base.avatar_key }
+}
+
 export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: number, size: number = 20) {
   return transactionWrapper("listUsers", async connection => {
     let C: { new(...args: any[]): RawCustomer | RawMaintainer | RawManager }
@@ -181,7 +185,7 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
       new DbEntity(RawUser).asTable(),
       connection
     )
-    return (await db.list()).map(([x, u]) => ({ ...x, nickname: u.nickname }))
+    return (await db.list()).map(([x, u]) => mix(u, x))
   })
 }
 
@@ -206,11 +210,11 @@ export function getUser(userId: number) {
         throw new LogicalError("未注册用户")
     }
 
-    let mixedDb = new DbEntity(C, connection)
-    let mixedUser = await mixedDb.pullBySearching([[['user_id'], '=', userId]])
-    if (!mixedUser) throw new LogicalError("未找到用户的详细记录")
+    let extendedDb = new DbEntity(C, connection)
+    let extendedUser = await extendedDb.pullBySearching([[['user_id'], '=', userId]])
+    if (!extendedUser) throw new LogicalError("未找到用户的详细记录")
     
-    return { ...mixedUser, nickname: user.nickname, role: user.role, avatar_key: user.avatar_key }
+    return mix(user, extendedUser)
   })
 }
 
