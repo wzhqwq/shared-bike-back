@@ -1,4 +1,4 @@
-import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_NOT_ACTIVATED, BIKE_UNAVAILABLE, CONFIG_REWARD_BASE, CONFIG_REWARD_DESCRIPTION, CONFIG_REWARD_PICTURE, CONFIG_SAFE_HEALTH, REPAIR_UNHANDLED, SEARCH_RANGE } from "../constant/values"
+import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_NOT_ACTIVATED, BIKE_UNAVAILABLE, CONFIG_REWARD_BASE, CONFIG_REWARD_DESCRIPTION, CONFIG_REWARD_PICTURE, CONFIG_SAFE_HEALTH, REPAIR_FAILED, REPAIR_UNHANDLED, SEARCH_RANGE } from "../constant/values"
 import { Bike } from "../entities/bo/Bike"
 import { BikeSeries, RawBike } from "../entities/dto/RawBike"
 import { Malfunction } from "../entities/dto/Malfunction"
@@ -167,6 +167,14 @@ export function handleMalfunction(repairRecord: RepairRecord) {
     ], [
       [['user_id'], '=', repairRecord.maintainer_id]
     ])
+
+    if (repairRecord.conclusion === REPAIR_FAILED) {
+      await bikeDb.update([
+        ['fail_count', [['fail_count'], '+', 1]]
+      ], [
+        [['id'], '=', repairRecord.bike_id]
+      ])
+    }
 
     return malfunctionRecords.map(r => r.id)
   })
