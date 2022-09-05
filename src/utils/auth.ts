@@ -2,7 +2,7 @@ import jwt = require("koa-jwt")
 import fs = require("fs/promises")
 import path = require("path")
 import { sign } from "jsonwebtoken"
-import crypto = require("crypto")
+import crypto from 'crypto-es'
 import { getLogger } from "log4js"
 
 import { JWT_SECRET } from "../constant/values"
@@ -33,24 +33,11 @@ export const signJwt = (payload: JwtPayload) => sign(
 )
 
 class BikeCommunication {
-  private privateKey: crypto.KeyObject
-
-  constructor() {
-    let privatePath = path.resolve(__dirname, '../constant/private.key')
-    fs.access(privatePath).then(() => {
-      fs.readFile(privatePath).then(buf => {
-        this.privateKey = crypto.createPrivateKey(buf)
-      }).catch(() => {
-        logger.error("未配置私钥")
-      })
-    })
-  }
-
   public encrypt(values: string[]) {
-    return crypto.privateEncrypt(this.privateKey, Buffer.from(values.join('$'), 'ascii')).toString('ascii')
+    return crypto.AES.encrypt(values.join('$'), 'bike').toString()
   }
   public decrypt(encrypted: string) {
-    return crypto.privateDecrypt(this.privateKey, Buffer.from(encrypted, 'ascii')).toString('ascii').split('$')
+    return crypto.AES.decrypt(encrypted, 'bike').toString().split('$')
   }
 }
 

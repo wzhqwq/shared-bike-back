@@ -2,6 +2,7 @@ import crypto = require("crypto")
 import { CUSTOMER_USER, MAINTAINER_USER, MANAGER_USER, PASSWORD_SALT, PASSWORD_SECRET, REQUEST_REJECTED, REQUEST_UNHANDLED } from "../constant/values"
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawUser, RawMaintainer, RawManager, RawCustomer } from "../entities/dto/RawUser"
+import { MaintainerSection } from "../entities/dto/Section"
 import { DbEntity, DbJoined } from "../entities/entity"
 import { hide } from "../entities/vo/Result"
 import { signJwt } from "../utils/auth"
@@ -188,6 +189,16 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
       connection
     )
     return (await db.list()).map(([x, u]) => mixUser(u, x))
+  })
+}
+
+export function listMaintainersInSection(sectionId?: number) {
+  return transactionWrapper("listSection", async (connection) => {
+    return (await new DbJoined(
+      new DbEntity(MaintainerSection).asTable([[['section_id'], '=', sectionId]]),
+      new DbEntity(RawMaintainer).asTable(),
+      connection
+    ).list()).map(([_, m]) => m)
   })
 }
 

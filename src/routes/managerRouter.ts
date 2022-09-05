@@ -10,10 +10,10 @@ import { MaintainerSection, Section } from "../entities/dto/Section";
 import { Souvenir } from "../entities/dto/Souvenir";
 import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
-import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
-import { addMalfunction, addSeries, addSouvenir, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
+import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
+import { addMalfunction, addSeries, addSouvenir, cachedConfigs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
-import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser } from "../services/userService";
+import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser, listMaintainersInSection } from "../services/userService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
 
@@ -104,10 +104,6 @@ bikeRouter.post('/destroy', checkBodyAsEntity(DestroyRecord), async ctx => {
 
 const bikeSeriesRouter = new Router()
 
-bikeSeriesRouter.get('/list', async ctx => {
-  ctx.body = cachedSeriesList
-})
-
 bikeSeriesRouter.post('/add', checkBodyAsEntity(BikeSeries), async ctx => {
   ctx.body = Result.success(await addSeries(ctx.request.body))
 })
@@ -123,10 +119,6 @@ bikeSeriesRouter.post('/remove', checkBody([
 })
 
 const malfunctionRouter = new Router()
-
-malfunctionRouter.get('/list', async ctx => {
-  ctx.body = cachedMalfunctions
-})
 
 malfunctionRouter.post('/add', checkBodyAsEntity(Malfunction), async ctx => {
   ctx.body = Result.success(await addMalfunction(ctx.request.body))
@@ -145,10 +137,6 @@ bikeRouter.use('/malfunction', malfunctionRouter.routes())
 
 const souvenirRouter = new Router()
 
-souvenirRouter.get('/list', async ctx => {
-  ctx.body = Result.success(await listSouvenirs())
-})
-
 souvenirRouter.post('/add', checkBodyAsEntity(Souvenir), async ctx => {
   ctx.body = Result.success(await addSouvenir(ctx.request.body))
 })
@@ -166,10 +154,6 @@ souvenirRouter.post('/exchanges/give', checkBody([
 })
 
 const sectionRouter = new Router()
-
-sectionRouter.get('/list', async ctx => {
-  ctx.body = Result.success(await listSection())
-})
 
 sectionRouter.post('/add', checkBodyAsEntity(Section), async ctx => {
   ctx.body = Result.success(await createSection(ctx.request.body))
@@ -191,6 +175,12 @@ sectionRouter.post('/maintainer/:type', checkBodyAsEntity(MaintainerSection), as
       ctx.body = Result.success(await revokeSectionFrom(ctx.request.body))
       break
   }
+})
+
+sectionRouter.get('/maintainer/list', checkParams([
+  { key: 'section_id', restrictions: ['integer', 'positive'] },
+]), async ctx => {
+  ctx.body = Result.success(await listMaintainersInSection(ctx.request.body))
 })
 
 const parkingPointRouter = new Router()

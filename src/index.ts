@@ -14,6 +14,7 @@ import imageRouter from "./routes/imageRouter"
 import fs = require("fs/promises")
 import path = require("path")
 import { initializeFs } from "./services/imageService"
+import sharedRouter from "./routes/sharedRouter"
 
 log4js.configure({
   appenders: {
@@ -64,10 +65,12 @@ authRouter.use(body())
 customerRouter.use(body())
 maintainerRouter.use(body())
 managerRouter.use(body())
+sharedRouter.use(body())
 root.use("/auth", authRouter.routes())
 root.use("/customer", customerRouter.routes())
 root.use("/maintainer", maintainerRouter.routes())
 root.use("/manager", managerRouter.routes())
+root.use("/shared", sharedRouter.routes())
 
 root.use("/image", imageRouter.routes())
 
