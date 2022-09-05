@@ -3,8 +3,8 @@ import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
 import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { createSpecificUser, editNickname, editProfile, requestToBe, signIn, signUp } from "../services/userService"
-import { checkBody, checkBodyAsEntity } from "../utils/body"
+import { createSpecificUser, editNickname, editPassword, editProfile, requestToBe, signIn, signUp } from "../services/userService"
+import { checkBody, checkBodyAsEntity, lengthRestriction } from "../utils/body"
 
 let authRouter = new Router()
 
@@ -46,6 +46,15 @@ authRouter.post('/edit_profile', checkBody([
   if (data.nickname) basicUser = await editNickname(data.nickname, user.id)
   if (data.phone && data.name) extraUser = await editProfile(data.name, data.phone, user.id, user.role)
   ctx.body = Result.success({ basicUser, extraUser })
+})
+
+authRouter.post('/edit_password', checkBody([
+  { key: 'password', restrictions: [lengthRestriction(1, 50)] },
+  { key: 'old_password', restrictions: [lengthRestriction(1, 50)] },
+]), async ctx => {
+  let user = ctx.state.user
+  let data: { password: string, old_password: string } = ctx.request.body
+  ctx.body = Result.success(await editPassword(data.password, data.old_password, user.id))
 })
 
 export default authRouter
