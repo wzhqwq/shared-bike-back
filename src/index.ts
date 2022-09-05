@@ -6,10 +6,10 @@ import { jwtMiddleware } from "./utils/auth"
 import Result from "./entities/vo/Result"
 import body = require("koa-body")
 import cors = require("@koa/cors")
-import customerRouter from "./routes/customerRoute"
+import customerRouter from "./routes/customerRouter"
 import { initializeCache } from "./services/constantService"
-import maintainerRouter from "./routes/maintainerRoute"
-import managerRouter from "./routes/managerRoute"
+import maintainerRouter from "./routes/maintainerRouter"
+import managerRouter from "./routes/managerRouter"
 import imageRouter from "./routes/imageRouter"
 
 log4js.configure({

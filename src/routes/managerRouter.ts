@@ -9,7 +9,7 @@ import { BikeBill, DestroyRecord, OtherBill, SignUpRequest, SouvenirBill } from 
 import { MaintainerSection, Section } from "../entities/dto/Section";
 import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
-import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/BikeService";
+import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
 import { addMalfunction, addSeries, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer } from "../services/userService";
