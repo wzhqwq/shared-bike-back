@@ -1,11 +1,11 @@
-import { CheckParam } from "../../utils/body"
+import { CheckParamsProperties } from "../../utils/body"
 
 export type Paginator = {
-  lastId: number
-  size?: number
+  lastId: string
+  size?: string
 }
 
-export const paginatorParams: CheckParam<Paginator>[] = [
-  { key: 'lastId', restrictions: ['integer', n => n > 0 ? '' : '必须为正数'] },
-  { key: 'size', restrictions: ['integer', n => n > 0 ? '' : '必须为正数'], nullable: true },
+export const paginatorParams: CheckParamsProperties<Paginator>[] = [
+  { key: 'lastId', restrictions: ['integer', 'positive'] },
+  { key: 'size', restrictions: ['integer', 'positive'], nullable: true, default: '10' },
 ]

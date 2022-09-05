@@ -14,30 +14,30 @@ import { addMalfunction, addSeries, cachedConfigs, cachedMalfunctions, cachedSer
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer } from "../services/userService";
 import { roleOnly } from "../utils/auth";
-import { checkBody, checkBodyAsEntity, checkBodyAsEntityList } from "../utils/body";
+import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
 
 const managerRouter = new Router()
 managerRouter.use(roleOnly(MANAGER_USER))
 
 const propertyRouter = new Router()
 
-propertyRouter.get('/separated/list/:category', checkBody(paginatorParams), async ctx => {
+propertyRouter.get('/separated/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as 'bike' | 'souvenir' | 'other'
-  let body = ctx.request.body as Paginator
-  ctx.body = Result.success(await listSeparatedBill(category, body.lastId, body.size))
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listSeparatedBill(category, parseInt(lastId), parseInt(size)))
 })
 
-propertyRouter.get('/master/list', checkBody(paginatorParams), async ctx => {
-  let body = ctx.request.body as Paginator
-  ctx.body = Result.success(await listMasterBill(body.lastId, body.size))
+propertyRouter.get('/master/list', checkParams(paginatorParams), async ctx => {
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listMasterBill(parseInt(lastId), parseInt(size)))
 })
 
-propertyRouter.get('/detail', checkBody([
-  { key: 'record_id', restrictions: ['number', 'integer', 'positive']},
-  { key: 'type', restrictions: [c => [0, 1, 2].includes(c) ? '' : '应为0、1或2'] }
+propertyRouter.get('/detail', checkParams([
+  { key: 'record_id', restrictions: ['integer', 'positive']},
+  { key: 'type', restrictions: [c => ['0', '1', '2'].includes(c) ? '' : '应为0、1或2'] }
 ]), async ctx => {
-  let body = ctx.request.body as { record_id: number, type: number }
-  ctx.body = Result.success(await getBillDetails(body.type, body.record_id))
+  let body = ctx.params as { record_id: string, type: string }
+  ctx.body = Result.success(await getBillDetails(parseInt(body.type), parseInt(body.record_id)))
 })
 
 propertyRouter.post('/separated/add/bike', checkBodyAsEntity(BikeBill), async ctx => {
@@ -54,15 +54,15 @@ propertyRouter.post('/separated/add/other', checkBodyAsEntity(OtherBill), async 
 
 const userRouter = new Router()
 
-userRouter.get('/list/:category', checkBody(paginatorParams), async ctx => {
+userRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as 'customer' | 'manager' | 'maintainer'
-  let body = ctx.request.body as Paginator
-  ctx.body = Result.success(await listUsers(category, body.lastId, body.size))
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listUsers(category, parseInt(lastId), parseInt(size)))
 })
 
-userRouter.get('/request/list', checkBody(paginatorParams), async ctx => {
-  let body = ctx.request.body as Paginator
-  ctx.body = Result.success(await listSignUpRequests(body.lastId, body.size))
+userRouter.get('/request/list', checkParams(paginatorParams), async ctx => {
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listSignUpRequests(parseInt(lastId), parseInt(size)))
 })
 
 userRouter.post('/request/handle', checkBody([
@@ -85,10 +85,10 @@ bikeRouter.get('/statistics', async ctx => {
   ctx.body = Result.success(await getBikeStatistics())
 })
 
-bikeRouter.get('/list/:category', checkBody(paginatorParams), async ctx => {
+bikeRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as "danger" | "all" | "destroyed"
-  let body = ctx.request.body as Paginator
-  ctx.body = Result.success(await listBikes(body.lastId, body.size, category))
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listBikes(parseInt(lastId), parseInt(size), category))
 })
 
 bikeRouter.post('/destroy', checkBodyAsEntity(DestroyRecord), async ctx => {
@@ -142,10 +142,10 @@ souvenirRouter.get('/list', async ctx => {
   ctx.body = Result.success(await listSouvenirs())
 })
 
-souvenirRouter.get('/exchanges/list', checkBody([
-  { key: 'customer_id', restrictions: ['number', 'integer', 'positive'] },
+souvenirRouter.get('/exchanges/list', checkParams([
+  { key: 'customer_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listExchanges(ctx.request.body.customer_id))
+  ctx.body = Result.success(await listExchanges(parseInt(ctx.params.customer_id)))
 })
 
 souvenirRouter.post('/exchanges/give', checkBody([
@@ -208,13 +208,13 @@ configRouter.post('/modify', checkBodyAsEntityList(Configuration), async ctx => 
   ctx.body = Result.success(await setConfig(ctx.request.body))
 })
 
-managerRouter.use('property', propertyRouter.routes())
-managerRouter.use('user', userRouter.routes())
-managerRouter.use('bike', bikeRouter.routes())
-managerRouter.use('souvenir', souvenirRouter.routes())
-managerRouter.use('section', sectionRouter.routes())
-managerRouter.use('parking_point', parkingPointRouter.routes())
-managerRouter.use('config', configRouter.routes())
+managerRouter.use('/property', propertyRouter.routes())
+managerRouter.use('/user', userRouter.routes())
+managerRouter.use('/bike', bikeRouter.routes())
+managerRouter.use('/souvenir', souvenirRouter.routes())
+managerRouter.use('/section', sectionRouter.routes())
+managerRouter.use('/parking_point', parkingPointRouter.routes())
+managerRouter.use('/config', configRouter.routes())
 
 export default managerRouter
 

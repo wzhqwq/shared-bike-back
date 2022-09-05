@@ -1,12 +1,12 @@
 import { Connection, PoolConnection, QueryOptions } from "mysql";
-import { CheckParam, checkProperty, lengthRestriction, Restriction } from "../utils/body";
+import { CheckBodyProperties, checkProperty, lengthRestriction, Restriction } from "../utils/body";
 import { query, redisClient } from "../utils/db";
 import "reflect-metadata"
 
 const columnsSym = Symbol()
 const tableNameSym = Symbol()
 
-export type EntityColumn = CheckParam<any> & {
+export type EntityColumn = CheckBodyProperties<any> & {
   isPK: boolean
   FK?: { tableName: string, key: string }
   c: { new (...args: any[]) }

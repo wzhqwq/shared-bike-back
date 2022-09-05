@@ -5,7 +5,7 @@ import { RepairRecord } from "../entities/dto/RawRecords";
 import Result from "../entities/vo/Result";
 import { activateBike, checkAndPlan, finishMaintaining, handleMalfunction, listBikesInSection, listSection, registerBike, startMaintaining } from "../services/bikeService";
 import { roleOnly } from "../utils/auth";
-import { checkBody, checkBodyAsEntity } from "../utils/body";
+import { checkBody, checkBodyAsEntity, checkParams } from "../utils/body";
 
 const maintainerRouter = new Router()
 maintainerRouter.use(roleOnly(MAINTAINER_USER))
@@ -14,18 +14,16 @@ maintainerRouter.get('/list_sections', async ctx => {
   ctx.body = Result.success(await listSection(ctx.state.user.id))
 })
 
-maintainerRouter.get('/list_bikes', checkBody([
-  { key: 'section_id', restrictions: ['number', 'integer', 'positive'] },
+maintainerRouter.get('/list_bikes', checkParams([
+  { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  let body = ctx.request.body as { section_id: number }
-  ctx.body = Result.success(await listBikesInSection(body.section_id))
+  ctx.body = Result.success(await listBikesInSection(parseInt(ctx.params.section_id)))
 })
 
-maintainerRouter.get('/bikes_to_move', checkBody([
-  { key: 'section_id', restrictions: ['number', 'integer', 'positive'] },
+maintainerRouter.get('/bikes_to_move', checkParams([
+  { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  let body = ctx.request.body as { section_id: number }
-  ctx.body = Result.success(await checkAndPlan(body.section_id))
+  ctx.body = Result.success(await checkAndPlan(parseInt(ctx.params.section_id)))
 })
 
 maintainerRouter.post('/start_maintain', checkBody([

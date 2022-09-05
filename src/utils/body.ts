@@ -2,6 +2,7 @@ import Router = require("@koa/router")
 import { EntityColumn, getColumns } from "../entities/entity"
 
 type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geographical" | "price" | "imageKey"
+type BuiltInParamRestriction = "integer" | "positive" | "geographical" | "imageKey"
 
 export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
 export const priceDecimal = /^\d{,8}\.\d{2}$/
@@ -17,17 +18,25 @@ const allRestrictions: { [key in BuiltInRestriction]: (o: any) => string } = {
   imageKey: o => imageKeyName.test(o) ? '' : '编号格式错误'
 }
 
-export type Restriction = (BuiltInRestriction | ((o: any) => string))
-export type CheckParam<T> = { key: keyof T, restrictions: Restriction[], nullable?: boolean, readonly?: boolean }
+const allParamRestrictions: { [key in BuiltInParamRestriction]: (o: any) => string } = {
+  integer: o => !isNaN(parseInt(o)) ? '' : '应为整数',
+  positive: o => parseInt(o) > 0 ? '' : '应为正数',
+  geographical: o => posDecimal.test(o) ? '' : '小数位错误',
+  imageKey: o => imageKeyName.test(o) ? '' : '编号格式错误'
+}
 
-export function checkBody<T>(params: CheckParam<T>[]): Router.Middleware {
+export type Restriction<T = BuiltInRestriction> = (T | ((o: any) => string))
+export type CheckBodyProperties<T> = { key: keyof T, restrictions: Restriction<BuiltInRestriction>[], nullable?: boolean, readonly?: boolean }
+export type CheckParamsProperties<T> = { key: keyof T, restrictions: Restriction<BuiltInParamRestriction>[], nullable?: boolean, default?: string }
+
+export function checkBody<T>(params: CheckBodyProperties<T>[]): Router.Middleware {
   return async (ctx, next) => {
     let o = ctx.request.body
     try {
       ctx.request.body = params.reduce((last, param) => {
-        let v = o[param.key]
+        let v = o[param.key.toString()]
         checkProperty(param, v)
-        return { ...last, [param.key]: v }
+        return { ...last, [param.key.toString()]: v }
       }, {})
     }
     catch (e) {
@@ -39,7 +48,36 @@ export function checkBody<T>(params: CheckParam<T>[]): Router.Middleware {
   }
 }
 
-export function checkProperty(param: CheckParam<any>, value: any) {
+export function checkParams<T>(params: CheckParamsProperties<T>[]): Router.Middleware {
+  return async (ctx, next) => {
+    let o = ctx.params
+    try {
+      params.forEach(param => {
+        let v = o[param.key.toString()]
+        if (typeof v === 'undefined' || v === null) {
+          if (param.nullable) {
+            if (param.default) o[param.key.toString()] = param.default
+            return
+          }
+          throw new Error(`字段${param.key.toString()}未提供`)
+        }
+        
+        let errors = param.restrictions
+          .map(r => typeof r === "string" ? allParamRestrictions[r](v) : r(v))
+          .filter(Boolean)
+        if (errors.length) throw new Error(`字段${param.key.toString()}${errors.join('、')}`)
+      }, {})
+    }
+    catch (e) {
+      ctx.status = 400
+      ctx.body = e.message
+      return
+    }
+    await next()
+  }
+}
+
+export function checkProperty(param: CheckBodyProperties<any>, value: any) {
   if (typeof value === 'undefined' || value === null) {
     if (param.nullable) return
     throw new Error(`字段${param.key.toString()}未提供`)

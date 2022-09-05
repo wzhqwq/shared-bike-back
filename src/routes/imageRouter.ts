@@ -1,16 +1,16 @@
 import Router = require("@koa/router");
 import Result from "../entities/vo/Result";
 import { fetchImage, putImage } from "../services/imageService";
-import { checkBody, lengthRestriction } from "../utils/body";
+import { checkBody, checkParams, lengthRestriction } from "../utils/body";
 import { LogicalError } from "../utils/errors";
 
 const imageRouter = new Router()
 
-imageRouter.get('/show', checkBody([
-  { key: 'key', restrictions: ['string', lengthRestriction(1, 50), 'imageKey'] }
+imageRouter.get('/show', checkParams([
+  { key: 'key', restrictions: [lengthRestriction(1, 50), 'imageKey'] }
 ]), async ctx => {
   ctx.type = 'image'
-  ctx.body = await fetchImage(ctx.request.body.key)
+  ctx.body = await fetchImage(ctx.params.key)
 })
 
 imageRouter.put('/upload', async ctx => {
