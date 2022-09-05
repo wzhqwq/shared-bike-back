@@ -7,10 +7,11 @@ import { ParkingPoint } from "../entities/dto/ParkingPoint";
 import { BikeSeries } from "../entities/dto/RawBike";
 import { BikeBill, DestroyRecord, OtherBill, SignUpRequest, SouvenirBill } from "../entities/dto/RawRecords";
 import { MaintainerSection, Section } from "../entities/dto/Section";
+import { Souvenir } from "../entities/dto/Souvenir";
 import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
-import { addMalfunction, addSeries, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
+import { addMalfunction, addSeries, addSouvenir, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser } from "../services/userService";
 import { roleOnly } from "../utils/auth";
@@ -146,6 +147,10 @@ const souvenirRouter = new Router()
 
 souvenirRouter.get('/list', async ctx => {
   ctx.body = Result.success(await listSouvenirs())
+})
+
+souvenirRouter.post('/add', checkBodyAsEntity(Souvenir), async ctx => {
+  ctx.body = Result.success(await addSouvenir(ctx.request.body))
 })
 
 souvenirRouter.get('/exchanges/list', checkParams([

@@ -381,17 +381,16 @@ export function checkAndPlan(sectionId: number) {
       [['status'], '=', BIKE_AVAILABLE],
       [['health'], '>=', getConfigValue(CONFIG_SAFE_HEALTH)]
     ], ['id', 'p_latitude', 'p_longitude', 'parking_point_id']))
-      .map(b => ({ id: b.id, p_latitude: b.p_latitude, p_longitude: b.p_longitude, parking_point_id: b.parking_point_id }))
     if (bikesInSection.length < needed) {
       return { lacks: lackOfBikePoints, solution: null }
     }
 
     let notInPointBike = bikesInSection.filter(b => !b.parking_point_id)
     if (notInPointBike.length >= needed) {
-      return { lacks: lackOfBikePoints, solution: notInPointBike.slice(0, needed) }
+      return { lacks: lackOfBikePoints, solution: notInPointBike.slice(0, needed).map(b => b.id) }
     }
 
-    let parkingPoints = new Map<number, { id: number, p_latitude: string, p_longitude: string, parking_point_id: number }[]>()
+    let parkingPoints = new Map<number, RawBike[]>()
     bikesInSection.forEach(b => {
       let id = b.parking_point_id
       if (!id || lackOfBikePointIds.includes(id)) return
@@ -419,6 +418,6 @@ export function checkAndPlan(sectionId: number) {
         needed -= p.exceeded
       }
     }
-    return { lacks: lackOfBikePoints, solution: result }
+    return { lacks: lackOfBikePoints, solution: result.map(b => b.id) }
   })
 }
