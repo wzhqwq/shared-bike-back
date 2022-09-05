@@ -37,6 +37,15 @@ export function listExchangeRecords(customerId: number, lastId: number, size: nu
   })
 }
 
+export function listRechargeRecords(customerId: number, lastId: number, size: number = 20) {
+  return transactionWrapper("listRechargeRecords", async connection => {
+    return await new DbEntity(RechargeRecord, connection).list([
+      [['customer_id'], '=', customerId],
+      [['id'], '<', lastId],
+    ], undefined, size, { key: 'id', mode: 'DESC' })
+  })
+}
+
 export function recharge(record: RechargeRecord, customerId: number) {
   return transactionWrapper("recharge", async connection => {
     let rechargeDb = new DbEntity(RechargeRecord, connection)

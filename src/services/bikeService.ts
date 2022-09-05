@@ -213,6 +213,25 @@ export function listMalfunctionRecords(customerId: number, rideId: number) {
   })
 }
 
+export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, size: number = 20) {
+  return transactionWrapper("listMalfunctionRecords", async (connection) => {
+    return (await new DbJoined(
+      new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
+      new DbEntity(MalfunctionRecord).asTable([[['id'], '<', lastId], [['status'], '=', REPAIR_UNHANDLED]]),
+      connection
+    ).list(undefined, undefined, size, { key: 'id', mode: 'DESC' })).map(([r, m]) => m)
+  })
+}
+
+export function listRepair(maintainerId: number, lastId: number, size: number = 20) {
+  return transactionWrapper("listMalfunctionRecords", async (connection) => {
+    return await new DbEntity(RepairRecord, connection).list([
+      [['maintainer_id'], '=', maintainerId],
+      [['id'], '<', lastId],
+    ], undefined, size, { key: 'id', mode: 'DESC' })
+  })
+}
+
 export function registerBike(encrypted: string, seriesId: number) {
   return transactionWrapper("registerBike", async (connection) => {
     if (!cachedSeriesList.some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")

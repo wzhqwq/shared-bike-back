@@ -1,13 +1,11 @@
 import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
 import { Paginator, paginatorParams } from "../entities/dto/Paginator"
-import { RawBike } from "../entities/dto/RawBike"
 import { ExchangeRecord, MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
-import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { getBikeBySeriesNo, listBikesAround, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/bikeService"
+import { getBikeBySeriesNo, listBikesAround, listMalfunctionRecords, listRideRecords, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/bikeService"
 import { listSouvenirs } from "../services/constantService"
-import { exchange, listDepositChanges, listExchangeRecords, listPointChanges, recharge } from "../services/customerPropertyService"
+import { exchange, listDepositChanges, listExchangeRecords, listPointChanges, listRechargeRecords, recharge } from "../services/customerPropertyService"
 import { roleOnly } from "../utils/auth"
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams, lengthRestriction } from "../utils/body"
 
@@ -50,17 +48,31 @@ bikeRouter.post("/report", checkBodyAsEntityList(MalfunctionRecord), async ctx =
   ctx.body = Result.success(await reportMalfunction(ctx.request.body, ctx.state.user.id))
 })
 
+bikeRouter.get("/record/list/ride", checkParams(paginatorParams), async ctx => {
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listRideRecords(ctx.state.user.id, parseInt(lastId), parseInt(size)))
+})
+
+bikeRouter.get("/record/list/malfunction", checkParams([
+  { key: 'ride_id', restrictions: ['integer'] },
+]), async ctx => {
+  ctx.body = Result.success(await listMalfunctionRecords(ctx.state.user.id, parseInt(ctx.params.ride_id)))
+})
+
 let propertyRouter = new Router()
 
 propertyRouter.get("/list/:type", checkParams(paginatorParams), async ctx => {
   let { lastId, size } = ctx.params as Paginator
-  let type = ctx.params.type as "points" | "deposit"
+  let type = ctx.params.type as "points" | "deposit" | "recharge"
   switch(type) {
     case 'points':
       ctx.body = Result.success(await listPointChanges(ctx.state.user.id, parseInt(lastId), parseInt(size)))
       break
     case 'deposit':
       ctx.body = Result.success(await listDepositChanges(ctx.state.user.id, parseInt(lastId), parseInt(size)))
+      break
+    case 'recharge':
+      ctx.body = Result.success(await listRechargeRecords(ctx.state.user.id, parseInt(lastId), parseInt(size)))
       break
   }
 })

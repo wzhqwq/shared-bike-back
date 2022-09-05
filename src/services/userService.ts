@@ -186,7 +186,7 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
 }
 
 export function getUser(userId: number) {
-  return transactionWrapper("listUsers", async connection => {
+  return transactionWrapper("getUser", async connection => {
     let userDb = new DbEntity(RawUser, connection)
     let user = await userDb.pullBySearching([[['id'], '=', userId]])
     if (!user) throw new LogicalError("用户不存在")
@@ -210,7 +210,7 @@ export function getUser(userId: number) {
     let mixedUser = await mixedDb.pullBySearching([[['user_id'], '=', userId]])
     if (!mixedUser) throw new LogicalError("未找到用户的详细记录")
     
-    return { ...mixedUser, nickname: user.nickname, role: user.role }
+    return { ...mixedUser, nickname: user.nickname, role: user.role, avatar_key: user.avatar_key }
   })
 }
 

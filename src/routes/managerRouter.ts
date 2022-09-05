@@ -12,7 +12,7 @@ import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, listSection, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
 import { addMalfunction, addSeries, cachedConfigs, cachedMalfunctions, cachedSeriesList, listSouvenirs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
-import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer } from "../services/userService";
+import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser } from "../services/userService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
 
@@ -58,6 +58,12 @@ userRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as 'customer' | 'manager' | 'maintainer'
   let { lastId, size } = ctx.params as Paginator
   ctx.body = Result.success(await listUsers(category, parseInt(lastId), parseInt(size)))
+})
+
+userRouter.get('/find', checkParams([
+  { key: 'user_id', restrictions: ['integer', 'positive']},
+]), async ctx => {
+  ctx.body = Result.success(await getUser(parseInt(ctx.params.user_id)))
 })
 
 userRouter.get('/request/list', checkParams(paginatorParams), async ctx => {
