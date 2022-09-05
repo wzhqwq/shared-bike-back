@@ -19,7 +19,6 @@ export class ParkingPoint {
   @Column(Number)
   public bikes_count: number
   
-  @Nullable
   @Column(Number)
   public minimum_count: number
 

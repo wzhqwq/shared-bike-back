@@ -98,7 +98,7 @@ export function purchaseSouvenir(record: SouvenirBill, managerId: number) {
     record.time = new Date()
     await new DbEntity(SouvenirBill, connection).append(record)
     await new DbEntity(Souvenir, connection).update([
-      ['total_amount', record.amount]
+      ['total_amount', [['total_amount'], '+', record.amount]]
     ], [
       [['id'], '=', record.souvenir_id]
     ])

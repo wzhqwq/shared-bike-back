@@ -79,6 +79,7 @@ export class MalfunctionRecord extends BaseRecord {
   @Column(String)
   public image_key: string
   
+  @Nullable
   @Restriction(c => [0, 1, 2, 3].includes(c) ? '' : '应为0、1、2或3')
   @Column(Number)
   public status: number

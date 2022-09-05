@@ -186,6 +186,7 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
     let mRecordDb = new DbEntity(MalfunctionRecord, connection)
     await Promise.all(mRecords.map(async r => {
       r.bike_id = bikeId
+      r.status = REPAIR_UNHANDLED
       return await mRecordDb.append(r)
     }))
 

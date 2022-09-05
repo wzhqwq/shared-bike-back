@@ -57,6 +57,7 @@ export function exchange(record: ExchangeRecord, customerId: number) {
     if (!customer) throw new LogicalError("用户不存在")
     if (!souvenir) throw new LogicalError("纪念品不存在")
 
+    if (souvenir.total_amount < record.amount) throw new LogicalError("纪念品存量不足")
     if (souvenir.price * record.amount > customer.points) throw new LogicalError("兑换纪念品的点数不足")
     
     let exchangeDb = new DbEntity(ExchangeRecord, connection)
@@ -64,6 +65,11 @@ export function exchange(record: ExchangeRecord, customerId: number) {
     record.customer_id = customerId
     record.time = new Date()
     await exchangeDb.append(record)
+    await souvenirDb.update([
+      ['total_amount', [['total_amount'], '-', record.amount]]
+    ], [
+      [['id'], '=', record.souvenir_id]
+    ])
 
     return record
   })
