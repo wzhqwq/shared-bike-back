@@ -11,6 +11,8 @@ import { initializeCache } from "./services/constantService"
 import maintainerRouter from "./routes/maintainerRouter"
 import managerRouter from "./routes/managerRouter"
 import imageRouter from "./routes/imageRouter"
+import fs = require("fs/promises")
+import path = require("path")
 
 log4js.configure({
   appenders: {
@@ -62,6 +64,11 @@ root.use("/customer", customerRouter.routes())
 root.use("/maintainer", maintainerRouter.routes())
 root.use("/manager", managerRouter.routes())
 root.use("/image", imageRouter.routes())
+
+root.get('/encryption/public_key', async ctx => {
+  let publicPath = path.resolve(__dirname, '../constant/public.key')
+  ctx.body = await fs.readFile(publicPath)
+})
 
 app.use(body())
 app.use(root.routes())

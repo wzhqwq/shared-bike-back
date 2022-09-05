@@ -37,7 +37,6 @@ class BikeCommunication {
 
   constructor() {
     let privatePath = path.resolve(__dirname, '../constant/private.key')
-    let publicPath = path.resolve(__dirname, '../constant/public.key')
     fs.access(privatePath).then(() => {
       fs.readFile(privatePath).then(buf => {
         this.privateKey = crypto.createPrivateKey(buf)
