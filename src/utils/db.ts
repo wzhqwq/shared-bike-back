@@ -7,6 +7,7 @@ import { DatabaseError } from "./errors"
 const logger = log4js.getLogger('default.all')
 
 const databaseHost = process.env.DB_HOST ?? "localhost"
+const redisHost = process.env.REDIS_HOST ?? "localhost"
 const databasePassword = process.env.DB_PASS ?? "bike"
 const databaseName = "shared_bike"
 
@@ -118,6 +119,8 @@ export async function transactionWrapper<T>(
 
 // redis
 
-export const redisClient = createClient()
+export const redisClient = createClient({
+  url: `redis://${redisHost}:6380`
+})
 
 redisClient.connect()
