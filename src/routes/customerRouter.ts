@@ -3,7 +3,7 @@ import { CUSTOMER_USER } from "../constant/values"
 import { Paginator, paginatorParams } from "../entities/dto/Paginator"
 import { ExchangeRecord, MalfunctionRecord, RechargeRecord } from "../entities/dto/RawRecords"
 import Result from "../entities/vo/Result"
-import { getBikeBySeriesNo, listBikesAround, listMalfunctionRecords, listRideRecords, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/bikeService"
+import { getBikeBySeriesNo, listBikesAround, listMalfunctionRecords, listParkingPointAround, listRideRecords, reportMalfunction, tryUnlockBike, updateWhileRiding } from "../services/bikeService"
 import { listSouvenirs } from "../services/constantService"
 import { exchange, listDepositChanges, listExchangeRecords, listPointChanges, listRechargeRecords, recharge } from "../services/customerPropertyService"
 import { roleOnly } from "../utils/auth"
@@ -20,6 +20,14 @@ bikeRouter.get("/list", checkParams([
 ]), async ctx => {
   let { longitude, latitude } = ctx.params as { longitude: string, latitude: string }
   ctx.body = Result.success(await listBikesAround(parseFloat(longitude), parseFloat(latitude), CUSTOMER_USER))
+})
+
+bikeRouter.get("/parking_point/list", checkParams([
+  { key: 'longitude', restrictions: ['geographical'] },
+  { key: 'latitude', restrictions: ['geographical'] },
+]), async ctx => {
+  let { longitude, latitude } = ctx.params as { longitude: string, latitude: string }
+  ctx.body = Result.success(await listParkingPointAround(parseFloat(longitude), parseFloat(latitude)))
 })
 
 bikeRouter.get("/find", checkParams([

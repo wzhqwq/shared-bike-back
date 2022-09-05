@@ -4,7 +4,7 @@ import { GeoPoint, geoPointParams } from "../entities/dto/Geographical";
 import { Paginator, paginatorParams } from "../entities/dto/Paginator";
 import { RepairRecord } from "../entities/dto/RawRecords";
 import Result from "../entities/vo/Result";
-import { activateBike, checkAndPlan, finishMaintaining, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listRepair, listSection, registerBike, startMaintaining } from "../services/bikeService";
+import { activateBike, checkAndPlan, finishMaintaining, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listSection, registerBike, startMaintaining } from "../services/bikeService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkParams } from "../utils/body";
 
@@ -13,6 +13,12 @@ maintainerRouter.use(roleOnly(MAINTAINER_USER))
 
 maintainerRouter.get('/list_sections', async ctx => {
   ctx.body = Result.success(await listSection(ctx.state.user.id))
+})
+
+maintainerRouter.get('/list_parking_points', checkParams([
+  { key: 'section_id', restrictions: ['integer', 'positive'] },
+]), async ctx => {
+  ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.params.section_id)))
 })
 
 maintainerRouter.get('/bike/list', checkParams([

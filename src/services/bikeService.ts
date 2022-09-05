@@ -350,6 +350,25 @@ export function listParkingPoint() {
   return transactionWrapper("listParkingPoint", async (connection) => new DbEntity(ParkingPoint, connection).list())
 }
 
+export function listParkingPointAround(posLongitude: number, posLatitude: number) {
+  return transactionWrapper("listParkingPointAround", async (connection) =>
+    new DbEntity(ParkingPoint, connection).list([
+      [['p_longitude'], 'BETWEEN',
+        [(posLongitude - SEARCH_RANGE).toFixed(6), (posLongitude + SEARCH_RANGE).toFixed(6)]
+      ],
+      [['p_latitude'], 'BETWEEN',
+        [(posLatitude - SEARCH_RANGE).toFixed(6), (posLatitude + SEARCH_RANGE).toFixed(6)]
+      ],
+    ])
+  )
+}
+
+export function listParkingPointInSection(sectionId: number) {
+  return transactionWrapper("listParkingPointInSection", async (connection) =>
+    new DbEntity(ParkingPoint, connection).list([[['section_id'], '=', sectionId]])
+  )
+}
+
 export function createParkingPoint(pp: ParkingPoint) {
   return transactionWrapper("createParkingPoint", async (connection) => {
     let ppDb = new DbEntity(ParkingPoint, connection)
