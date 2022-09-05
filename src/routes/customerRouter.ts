@@ -83,11 +83,11 @@ propertyRouter.post("/recharge", checkBodyAsEntity(RechargeRecord), async ctx =>
 
 let souvenirRouter = new Router()
 
-souvenirRouter.get("/list_items", async ctx => {
+souvenirRouter.get("/items/list", async ctx => {
   ctx.body = Result.success(await listSouvenirs())
 })
 
-souvenirRouter.get("/list_exchanged", checkParams(paginatorParams), async ctx => {
+souvenirRouter.get("/exchanged/list", checkParams(paginatorParams), async ctx => {
   let { lastId, size } = ctx.params as Paginator
   ctx.body = Result.success(await listExchangeRecords(ctx.state.user.id, parseInt(lastId), parseInt(size)))
 })

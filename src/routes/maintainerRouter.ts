@@ -42,8 +42,9 @@ maintainerRouter.post('/maintain/finish', checkBody<GeoPoint & { bike_id: number
   ctx.body = Result.success(await finishMaintaining(body.bike_id, body.p_longitude, body.p_latitude))
 })
 
-maintainerRouter.get("/malfunction/list", checkParams([
+maintainerRouter.get("/malfunction/list", checkParams<Paginator & { bike_id: string }>([
   { key: 'bike_id', restrictions: ['integer'] },
+  ...paginatorParams,
 ]), async ctx => {
   let { lastId, size, bike_id } = ctx.params as Paginator & { bike_id: string }
   ctx.body = Result.success(await listMalfunctionRecordsOfBike(parseInt(bike_id), parseInt(lastId), parseInt(size)))
