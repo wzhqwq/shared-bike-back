@@ -34,7 +34,6 @@ export const signJwt = (payload: JwtPayload) => sign(
 
 class BikeCommunication {
   private privateKey: crypto.KeyObject
-  private publicKey: crypto.KeyObject
 
   constructor() {
     let privatePath = path.resolve(__dirname, '../constant/private.key')
@@ -44,13 +43,6 @@ class BikeCommunication {
         this.privateKey = crypto.createPrivateKey(buf)
       }).catch(() => {
         logger.error("未配置私钥")
-      })
-    })
-    fs.access(publicPath).then(() => {
-      fs.readFile(publicPath).then(buf => {
-        this.publicKey = crypto.createPublicKey(buf)
-      }).catch(() => {
-        logger.error("未配置公钥")
       })
     })
   }

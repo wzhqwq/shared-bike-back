@@ -70,7 +70,7 @@ export class Bike {
 
       await this.update(status, posLongitude, posLatitude)
       await recordDb.save(record)
-      return bikeComm.encrypt([record.id.toString()])
+      return { to: 'bike', message: bikeComm.encrypt([record.id.toString()]) }
     }
     if (this.raw.status === BIKE_OCCUPIED) {
       await this.update(status, posLongitude, posLatitude)
@@ -91,7 +91,7 @@ export class Bike {
       }
 
       await recordDb.save(record)
-      return `${duration.toFixed(0)},${charge.toFixed(2)}`
+      return { to: 'you', message: `${duration.toFixed(0)},${charge.toFixed(2)}` }
     }
     throw new LogicalError("无效更新操作")
   }
