@@ -1,27 +1,30 @@
-import * as fs from 'fs/promises'
+import * as fs from 'fs'
+import * as http from 'http'
 import { IMAGE_BASE } from '../constant/values'
 import { LogicalError } from '../utils/errors'
+import FlakeId = require('flake-idgen')
 
-export async function putImage(form: FormData) {
-  console.log(form.get('image'))
+const gen = new FlakeId()
 
-  return '123'
+export function putImage(req: http.IncomingMessage): Promise<string> {
+  return new Promise(res => {
+    gen.next((err, id) => {
+      let key = id.toString('hex')
+      req.pipe(fs.createWriteStream(IMAGE_BASE + '/img_' + key))
+      res(key)
+    })
+  })
 }
 
-export async function fetchImage(key: string) {
-  try {
-    return await fs.readFile(IMAGE_BASE + '/img_' + key)
-  }
-  catch (e) {
-    throw new LogicalError("图片不存在")
-  }
+export function fetchImage(key: string) {
+  return fs.promises.readFile(IMAGE_BASE + '/img_' + key)
 }
 
 export async function initializeFs() {
   try {
-    await fs.access(IMAGE_BASE)
+    await fs.promises.access(IMAGE_BASE)
   }
   catch (e) {
-    await fs.mkdir(IMAGE_BASE)
+    await fs.promises.mkdir(IMAGE_BASE)
   }
 }

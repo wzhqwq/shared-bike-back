@@ -13,6 +13,7 @@ import managerRouter from "./routes/managerRouter"
 import imageRouter from "./routes/imageRouter"
 import fs = require("fs/promises")
 import path = require("path")
+import { initializeFs } from "./services/imageService"
 
 log4js.configure({
   appenders: {
@@ -73,8 +74,8 @@ root.get('/encryption/public_key', async ctx => {
 app.use(body())
 app.use(root.routes())
 
-initializeCache().then(() => {
+initializeCache().then(initializeFs).then(() => {
   app.listen(80, () => {
     console.log("启动啦")
-  })  
+  })
 })

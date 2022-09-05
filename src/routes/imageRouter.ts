@@ -1,22 +1,27 @@
 import Router = require("@koa/router");
 import Result from "../entities/vo/Result";
 import { fetchImage, putImage } from "../services/imageService";
-import { checkBody, checkParams, lengthRestriction } from "../utils/body";
-import { LogicalError } from "../utils/errors";
+import { checkParams, lengthRestriction } from "../utils/body";
 
 const imageRouter = new Router()
 
 imageRouter.get('/show', checkParams([
   { key: 'key', restrictions: [lengthRestriction(1, 50), 'imageKey'] }
 ]), async ctx => {
-  ctx.type = 'image'
-  ctx.body = await fetchImage(ctx.params.key)
+  try {
+    let image = await fetchImage(ctx.params.key)
+    ctx.type = 'image'
+    ctx.body = image
+  }
+  catch (e) {
+    ctx.status = 404
+    ctx.response.body = ''
+  }
 })
 
 imageRouter.put('/upload', async ctx => {
-  let body = ctx.request.body
-  if (!(body instanceof FormData)) throw new LogicalError('请求格式错误')
-  ctx.body = Result.success(await putImage(body))
+  await putImage(ctx.req)
+  ctx.body = Result.success(null)
 })
 
 export default imageRouter
