@@ -43,6 +43,7 @@ export function Entity(tableName: string) {
             },
             get: () => property.value,
             enumerable: true,
+            configurable: true,
           }
           return property
         })
