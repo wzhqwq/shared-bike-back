@@ -1,3 +1,4 @@
+import body = require("koa-body")
 import Router = require("@koa/router");
 import { MAINTAINER_USER } from "../constant/values";
 import { GeoPoint, geoPointParams } from "../entities/dto/Geographical";
@@ -9,6 +10,7 @@ import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkParams, lengthRestriction } from "../utils/body";
 
 const maintainerRouter = new Router()
+maintainerRouter.use(body())
 maintainerRouter.use(roleOnly(MAINTAINER_USER))
 
 maintainerRouter.get('/list_sections', async ctx => {

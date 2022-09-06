@@ -267,7 +267,7 @@ function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntit
     let l = parseExpression(c[0]);
     let r = (c[1] === 'BETWEEN' ? c[2] : [c[2]]).map(e => parseExpression(e))
     sql.push(`${l[0]} ${c[1]} ${r.map(l => l[0]).join(' AND ')}`)
-    values.push(l[0], ...r.map(l => l[1]))
+    values.push(...l[1], ...r.map(l => l[1]))
   })
   return [sql.join(' AND '), values]
 }

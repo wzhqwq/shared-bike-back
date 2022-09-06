@@ -1,3 +1,4 @@
+import body = require("koa-body")
 import Router = require("@koa/router");
 import { MANAGER_USER } from "../constant/values";
 import { Configuration } from "../entities/dto/Configuration";
@@ -18,6 +19,7 @@ import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
 
 const managerRouter = new Router()
+managerRouter.use(body())
 managerRouter.use(roleOnly(MANAGER_USER))
 
 const propertyRouter = new Router()

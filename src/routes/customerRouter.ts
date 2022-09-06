@@ -1,3 +1,4 @@
+import body = require("koa-body")
 import Router = require("@koa/router")
 import { CUSTOMER_USER } from "../constant/values"
 import { Paginator, paginatorParams } from "../entities/dto/Paginator"
@@ -10,6 +11,7 @@ import { roleOnly } from "../utils/auth"
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams, lengthRestriction } from "../utils/body"
 
 const customerRouter = new Router()
+customerRouter.use(body())
 customerRouter.use(roleOnly(CUSTOMER_USER))
 
 const bikeRouter = new Router()

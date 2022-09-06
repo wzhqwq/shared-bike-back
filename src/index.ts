@@ -4,7 +4,6 @@ import log4js = require("log4js")
 import authRouter from "./routes/authRouter"
 import { jwtMiddleware } from "./utils/auth"
 import Result from "./entities/vo/Result"
-import body = require("koa-body")
 import cors = require("@koa/cors")
 import customerRouter from "./routes/customerRouter"
 import { initializeCache } from "./services/constantService"
@@ -61,11 +60,6 @@ let root = new Router()
 root.get("/", async ctx => {
   ctx.body = "テスト、テスト"
 })
-authRouter.use(body())
-customerRouter.use(body())
-maintainerRouter.use(body())
-managerRouter.use(body())
-sharedRouter.use(body())
 root.use("/auth", authRouter.routes())
 root.use("/customer", customerRouter.routes())
 root.use("/maintainer", maintainerRouter.routes())

@@ -1,3 +1,4 @@
+import body = require("koa-body")
 import Router = require("@koa/router")
 import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
@@ -7,6 +8,7 @@ import { createSpecificUser, editNickname, editPassword, editProfile, getUser, m
 import { checkBody, checkBodyAsEntity, lengthRestriction } from "../utils/body"
 
 let authRouter = new Router()
+authRouter.use(body())
 
 authRouter.post('/sign_up', checkBodyAsEntity(RawUser), async ctx => {
   ctx.body = Result.success(await signUp(ctx.request.body))

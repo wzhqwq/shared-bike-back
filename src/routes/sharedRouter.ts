@@ -1,9 +1,11 @@
+import body = require("koa-body")
 import Router = require("@koa/router")
 import Result from "../entities/vo/Result"
 import { listSection } from "../services/bikeService"
 import { cachedMalfunctions, cachedSeriesList, listSouvenirs } from "../services/constantService"
 
 const sharedRouter = new Router()
+sharedRouter.use(body())
 
 const sectionRouter = new Router()
 
