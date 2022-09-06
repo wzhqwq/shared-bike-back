@@ -21,7 +21,7 @@ declare module "koa" {
 }
 
 export const signJwt = (payload: JwtPayload) => sign(
-  { role: ['unlinked', 'customer', 'maintainer', 'manager'][payload.role], id: payload.id },
+  { role: payload.role, id: payload.id },
   JWT_SECRET,
   { algorithm: "HS256" }
 )
