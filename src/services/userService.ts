@@ -32,6 +32,7 @@ export function signUp(user: RawUser) {
     if (await db.pullBySearching([[['nickname'], '=', user.nickname]])) throw new LogicalError("昵称已被使用")
 
     user.role = 0
+    user.password = digest(user.password)
     await db.append(user)
     return signJwt(user)
   })
