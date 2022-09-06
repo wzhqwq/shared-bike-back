@@ -41,6 +41,10 @@ export class RawCustomer {
   @Column(String)
   public deposit: string
 
+  @Restriction('positive')
+  @Column(Number)
+  public mileage_total: number
+
   @Column(Date)
   public ban_time: Date
 }

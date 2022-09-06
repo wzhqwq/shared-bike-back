@@ -11,6 +11,7 @@ import { DbEntity, DbJoined, RedisDbEntity } from "../entity"
 import { getConfigValue, getSeries } from "../../services/constantService"
 import { posDecimal } from "../../utils/body"
 import { punishAfterwards } from "../../services/customerPropertyService"
+import { RawCustomer } from "../dto/RawUser"
 
 export class Bike {
   public raw: RawBike
@@ -73,6 +74,7 @@ export class Bike {
       return ''
     }
     if (this.raw.status === BIKE_OCCUPIED) {
+      this.raw.mileage += mileage
       await this.update(status, posLongitude, posLatitude)
 
       let record = await recordDb.get(this.raw.id)
@@ -89,8 +91,11 @@ export class Bike {
           punishAfterwards(userId, getConfigValue(CONFIG_OUT_OF_PP_PUNISH_POINTS), '未在停车点停车')
         }
       }
-
       await recordDb.save(record)
+
+      await new DbEntity(RawCustomer, this.connection)
+        .update([['mileage_total', [['mileage_total'], '+', mileage]]], [[['user_id'], '=', userId]])
+
       return `${duration.toFixed(0)},${charge.toFixed(2)}`
     }
     throw new LogicalError("无效更新操作")
