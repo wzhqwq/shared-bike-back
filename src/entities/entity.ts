@@ -144,11 +144,12 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
 
     let [whereClause, additionalValues] = parseCondition(conditions)
 
+    let parsed = changes.map(current => [current[0], parseExpression(current[1])])
+    let values = parsed.flatMap(current => [current[0], ...current[1][1]])
+
     return (await query<null>(
-      "UPDATE ?? SET ? WHERE " + whereClause,
-      [tableName, changes.reduce((last, current) => ({ ...last, [current[0]]: parseExpression(current[1]) }), {}),
-        ...additionalValues
-      ]
+      `UPDATE ?? SET ${parsed.map(current => '?? = ' + current[1][0]).join(', ')} WHERE ` + whereClause,
+      [tableName, ...values, ...additionalValues]
     )).affectedRows
   }
 
