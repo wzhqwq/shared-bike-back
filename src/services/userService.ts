@@ -220,7 +220,7 @@ export function getUser(userId: number) {
         C = RawManager
         break
       default:
-        throw new LogicalError("未注册用户")
+        return user
     }
 
     let extendedDb = new DbEntity(C, connection)
