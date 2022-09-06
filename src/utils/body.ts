@@ -1,5 +1,5 @@
 import Router = require("@koa/router")
-import { EntityColumn, getColumns } from "../entities/entity"
+import { getProperties } from "../entities/entity"
 
 type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geographical" | "price" | "imageKey"
 type BuiltInParamRestriction = "integer" | "positive" | "geographical" | "imageKey"
@@ -95,8 +95,8 @@ export function checkBodyAsEntity<T extends Object>(C: { new (...args: any[]): T
     let o = ctx.request.body
     try {
       let entity = new C()
-      let params = getColumns(entity)
-      params.forEach(param => entity[param.key] = o[param.key])
+      let params = getProperties(entity)
+      params.forEach(param => entity[param.column.key] = o[param.column.key])
       ctx.request.body = entity
     }
     catch (e) {
@@ -115,8 +115,8 @@ export function checkBodyAsEntityList<T extends Object>(C: { new (...args: any[]
       if (!(list instanceof Array)) throw new Error("应提供数组")
       ctx.request.body = list.map(o => {
         let entity = new C()
-        let params = getColumns(entity)
-        params.forEach(param => entity[param.key] = o[param.key])
+        let params = getProperties(entity)
+        params.forEach(param => entity[param.column.key] = o[param.column.key])
         return entity
       })
     }

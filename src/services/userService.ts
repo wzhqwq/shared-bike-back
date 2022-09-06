@@ -52,7 +52,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       customer.user_id = id
 
       let customerDb = new DbEntity(RawCustomer, connection)
-      await customerDb.append(customer)
+      await customerDb.append(customer, false)
     }
     else {
       let recordDb = new DbEntity(SignUpRequest, connection)
@@ -69,7 +69,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
       mixedUser.name = record.name
 
       let mixedDb = new DbEntity(role === MAINTAINER_USER ? RawMaintainer : RawManager)
-      await mixedDb.append(mixedUser)
+      await mixedDb.append(mixedUser, false)
     }
     let userDb = new DbEntity(RawUser, connection)
     await userDb.update([['role', role]], [[['id'], '=', id]])
@@ -78,7 +78,7 @@ export function createSpecificUser(id: number, isCustomer: boolean) {
   })
 }
 
-export function requestToBe(request: SignUpRequest) {
+export function requestToBe(request: SignUpRequest, userId: number) {
   return transactionWrapper("requestToBe", async (connection) => {
     let recordDb = new DbEntity(SignUpRequest, connection)
     let requestInDb = await recordDb.pullBySearching([[['user_id'], '=', request.user_id]])
@@ -90,6 +90,7 @@ export function requestToBe(request: SignUpRequest) {
     }
     requestInDb.status = REQUEST_UNHANDLED
     requestInDb.time = new Date()
+    requestInDb.user_id = userId
     await recordDb.append(requestInDb)
     return null
   })

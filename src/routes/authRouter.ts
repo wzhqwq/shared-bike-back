@@ -24,11 +24,9 @@ authRouter.post('/register_as_customer', async ctx => {
 })
 
 authRouter.post('/request_to_be', checkBodyAsEntity(SignUpRequest), async ctx => {
-  let user = ctx.state.user
   let data = ctx.request.body as SignUpRequest
-  data.user_id = user.id
 
-  ctx.body = Result.success(await requestToBe(data))
+  ctx.body = Result.success(await requestToBe(data, ctx.state.user.id))
 })
 
 authRouter.post('/check_role', async ctx => {

@@ -20,11 +20,11 @@ export type EntityProperty = {
 
 export function Entity(tableName: string) {
   return function <T extends { new(...args: any[]) }>(C: T) {
+    Reflect.metadata(tableNameSym, tableName)(C)
     return class extends C {
       constructor (...args: any[]) {
         super(...args)
-        Reflect.defineMetadata(tableNameSym, tableName, this)
-        let baseColumns = getColumns(this)
+        let baseColumns = getColumns(C)
         let instanceProperties: EntityProperty[] = []
         let properties: PropertyDescriptorMap = {}
         baseColumns.map(column => {
@@ -56,15 +56,22 @@ export function Entity(tableName: string) {
     }
   }
 }
-export function getColumns<TEntity extends Object>(target: TEntity) {
-  let columns = Reflect.getMetadata(columnsSym, target) as EntityColumn[]
-  if (!columns) {
-    columns = []
-    Reflect.defineMetadata(columnsSym, columns, target)
+export function getColumns<TEntity extends Object>(target: { new(...args: any[]): TEntity }) {
+  let columns = Reflect.getOwnMetadata(columnsSym, target) as EntityColumn[]
+  if (columns) return columns
+
+  columns = []
+  let t = target
+  while (t !== Object.getPrototypeOf(Object.getPrototypeOf(t)).constructor) {
+    let c = Reflect.getOwnMetadata(columnsSym, Object.getPrototypeOf(t)) as EntityColumn[]
+    if (c) columns.push(...c)
+    t = Object.getPrototypeOf(Object.getPrototypeOf(t)).constructor
   }
+  Reflect.metadata(columnsSym, columns)(target)
+
   return columns
 }
-export function getTableName(target: Object) {
+export function getTableName<TEntity extends Object>(target: { new(...args: any[]): TEntity }) {
   let tableName = Reflect.getMetadata(tableNameSym, target) as string
   if (!tableName) throw new Error("对象的类没有加@Entity装饰器：" + JSON.stringify(target))
   return tableName
@@ -94,7 +101,7 @@ abstract class BaseDb<TEntity extends Object, TCondition = TEntity> {
 type TableInfo<TEntity extends Object> = [string, any[], { new (...args: any[]): TEntity }]
 export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
   constructor(
-    protected c: { new (...args: any[]): TEntity },
+    protected C: { new (...args: any[]): TEntity },
     connection?: Connection
   ) {
     super(connection)
@@ -102,37 +109,38 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
 
   public async save(o: TEntity) {
     let properties = getProperties(o)
-    let tableName = getTableName(o)
+    let tableName = getTableName(this.C)
 
     let id = properties.find(k => k.column.isPK)
     let modifiedKeys = properties.filter(k => k.modified && !k.column.isPK)
-    modifiedKeys.forEach(k => { k.modified = false })
     modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
     await query<null>(
       "UPDATE ?? SET ? WHERE ?? = ?",
       [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
         id.column.key, id.value]
     )
+    modifiedKeys.forEach(k => { k.modified = false })
   }
 
-  public async append(o: TEntity) {
+  public async append(o: TEntity, autoIncrease = true) {
     let properties = getProperties(o)
-    let tableName = getTableName(o)
+    let tableName = getTableName(this.C)
 
     let id = properties.find(k => k.column.isPK)
     let modifiedKeys = properties.filter(k => k.modified)
-    modifiedKeys.forEach(k => { k.modified = false })
+    if (autoIncrease) modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
     let { insertId } = await query<null>(
       "INSERT INTO ?? (??) VALUES (?)",
       [tableName, modifiedKeys.map(k => k.column.key), modifiedKeys.map(k => k.value)]
     )
+    modifiedKeys.forEach(k => { k.modified = false })
     id.value = insertId
   }
 
   public async update(changes: [keyof TEntity, ExpressionType<TEntity>][], conditions: ConditionType<TEntity>[]) {
     if (!conditions.length) throw new Error("怎么能不加条件呢")
 
-    let tableName = getTableName(new this.c)
+    let tableName = getTableName(this.C)
 
     let [whereClause, additionalValues] = parseCondition(conditions)
 
@@ -147,7 +155,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
   public async delete(conditions: ConditionType<TEntity>[]) {
     if (!conditions.length) throw new Error("怎么能不加条件呢")
 
-    let tableName = getTableName(new this.c())
+    let tableName = getTableName(this.C)
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return (await this.query<any>(
@@ -162,7 +170,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     limit?: number,
     sort?: SortType<TEntity>,
   ) {
-    let tableName = getTableName(new this.c())
+    let tableName = getTableName(this.C)
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return (await this.query<TEntity>(
@@ -172,7 +180,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
         (limit ? ` LIMIT ${limit}` : ''),
       [...(columns ? [columns] : []), tableName, ...additionalValues],
     )).map(o => {
-      let entity = new this.c()
+      let entity = new this.C()
       let properties = getProperties(entity)
       properties.forEach(k => k.value = o[k.column.key])
       return entity
@@ -180,7 +188,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
   }
 
   public asTable(conditions: ConditionType<TEntity>[] = [], limit?: number, sort?: SortType<TEntity>): TableInfo<TEntity> {
-    let tableName = getTableName(new this.c())
+    let tableName = getTableName(this.C)
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return [
@@ -191,7 +199,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
           (limit ? ` LIMIT ${limit}` : '') :
         "??",
       [tableName, ...additionalValues],
-      this.c,
+      this.C,
     ]
   }
 }
@@ -215,11 +223,11 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     // LeftC.prototype
 
     let LeftC = this.leftTable[2], RightC = this.rightTable[2]
-    let leftTableName = getTableName(new LeftC()), rightTableName = getTableName(new RightC())
+    let leftTableName = getTableName(LeftC), rightTableName = getTableName(RightC)
 
-    let e = getColumns(new LeftC()).find(k => k.FK?.tableName === rightTableName)
+    let e = getProperties(new LeftC).find(k => k.column.FK?.tableName === rightTableName)
     if (!e) throw new Error("没有找到符合条件的外码")
-    let leftId = e.key, rightId = e.FK.key
+    let leftId = e.column.key, rightId = e.column.FK.key
 
     let q: QueryOptions = {
       sql: `SELECT ${columns ? '??' : '*'} FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
@@ -296,7 +304,7 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
     connection?: PoolConnection,
   ) {
     this.db = new DbEntity(C, connection)
-    this.prefix = 'bike__' + getTableName(new C()) + '__'
+    this.prefix = 'bike__' + getTableName(C) + '__'
   }
 
   public async get(keyword: any) {
@@ -326,9 +334,9 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
 
 export function Column(type: SupportedConstructor, visibility: number = 0) {
   return function (target: Object, key: string) {
-    getColumns(target).push({
+    getColumns(target.constructor as any).push({
       key,
-      restrictions: [type === Number ? "number" : "string"],
+      restrictions: type === Number ? ["number"] : (type === String ? ["string"] : []),
       isPK: false,
       c: type,
       visibility,
@@ -337,35 +345,34 @@ export function Column(type: SupportedConstructor, visibility: number = 0) {
 }
 
 export function Id(target: Object, key: string) {
-  let column = getColumns(target).find(k => k.key === key)
+  let column = getColumns(target.constructor as any).find(k => k.key === key)
   column.isPK = column.nullable = true
 }
 export function Readonly(target: Object, key: string) {
-  let column = getColumns(target).find(k => k.key === key)
+  let column = getColumns(target.constructor as any).find(k => k.key === key)
   column.readonly = column.nullable = true
 }
 export function Nullable(target: Object, key: string) {
-  getColumns(target).find(k => k.key === key).nullable = true
+  getColumns(target.constructor as any).find(k => k.key === key).nullable = true
 }
 
 export function Restriction(...restrictions: Restriction[]) {
   return function (target: Object, key: string) {
-    getColumns(target).find(k => k.key === key).restrictions.push(...restrictions)
+    getColumns(target.constructor as any).find(k => k.key === key).restrictions.push(...restrictions)
   }
 }
 export function Length(min?: number, max?: number) {
   return function (target: Object, key: string) {
-    getColumns(target).find(k => k.key === key).restrictions.push(lengthRestriction(min, max))
+    getColumns(target.constructor as any).find(k => k.key === key).restrictions.push(lengthRestriction(min, max))
   }
 }
 export function Foreign<TEntity extends Object>(EntityC: { new (...args: any[]): TEntity }, foreignKey: keyof TEntity) {
   return function (target: Object, key: string) {
-    let o = new EntityC()
-    let tableName = getTableName(o)
-    getColumns(target).find(k => k.key === key).FK = { tableName, key: foreignKey.toString() }
+    let tableName = getTableName(EntityC)
+    getColumns(target.constructor as any).find(k => k.key === key).FK = { tableName, key: foreignKey.toString() }
   }
 }
 
-export function getRestrictions<TEntity extends Object>(c: { new (...args: any[]): TEntity }, key: keyof TEntity) {
-  return getColumns(new c()).find(k => k.key === key)?.restrictions
+export function getRestrictions<TEntity extends Object>(C: { new (...args: any[]): TEntity }, key: keyof TEntity) {
+  return getProperties(new C).find(k => k.column.key === key)?.column.restrictions
 }
