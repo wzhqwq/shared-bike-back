@@ -20,7 +20,7 @@ maintainerRouter.get('/list_sections', async ctx => {
 maintainerRouter.get('/list_parking_points', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.params.section_id)))
+  ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.query.section_id)))
 })
 
 const bikeRouter = new Router()
@@ -28,19 +28,19 @@ const bikeRouter = new Router()
 bikeRouter.get('/list', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listBikesInSection(parseInt(ctx.params.section_id)))
+  ctx.body = Result.success(await listBikesInSection(parseInt(ctx.query.section_id)))
 })
 
 bikeRouter.get('/list_to_move', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await checkAndPlan(parseInt(ctx.params.section_id)))
+  ctx.body = Result.success(await checkAndPlan(parseInt(ctx.query.section_id)))
 })
 
 bikeRouter.get("/find", checkParams([
   { key: "series_no", restrictions: [lengthRestriction()] }
 ]), async ctx => {
-  ctx.body = Result.success(await getBikeBySeriesNo(ctx.params.series_no))
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no))
 })
 
 bikeRouter.post('/register', checkBody([
@@ -77,7 +77,7 @@ maintainerRouter.get("/malfunction/list", checkParams<Paginator & { bike_id: str
   { key: 'bike_id', restrictions: ['integer'] },
   ...paginatorParams,
 ]), async ctx => {
-  let { lastId, size, bike_id } = ctx.params as Paginator & { bike_id: string }
+  let { lastId, size, bike_id } = ctx.query as Paginator & { bike_id: string }
   ctx.body = Result.success(await listMalfunctionRecordsOfBike(parseInt(bike_id), parseInt(lastId), parseInt(size)))
 })
 
@@ -86,7 +86,7 @@ maintainerRouter.post('/malfunction/handle', checkBodyAsEntity(RepairRecord), as
 })
 
 maintainerRouter.get("/repair/list", checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listRepair(ctx.state.user.id, parseInt(lastId), parseInt(size)))
 })
 

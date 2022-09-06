@@ -9,7 +9,7 @@ imageRouter.get('/show', checkParams([
   { key: 'key', restrictions: [lengthRestriction(1, 50), 'imageKey'] }
 ]), async ctx => {
   try {
-    let image = await fetchImage(ctx.params.key)
+    let image = await fetchImage(ctx.query.key)
     ctx.type = 'image'
     ctx.body = image
   }

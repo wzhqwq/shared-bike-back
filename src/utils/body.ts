@@ -50,7 +50,7 @@ export function checkBody<T>(params: CheckBodyProperties<T>[]): Router.Middlewar
 
 export function checkParams<T>(params: CheckParamsProperties<T>[]): Router.Middleware {
   return async (ctx, next) => {
-    let o = ctx.params
+    let o = ctx.query
     try {
       params.forEach(param => {
         let v = o[param.key.toString()]

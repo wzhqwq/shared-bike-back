@@ -25,7 +25,7 @@ managerRouter.use(roleOnly(MANAGER_USER))
 const propertyRouter = new Router()
 
 propertyRouter.get('/master/list', checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listMasterBill(parseInt(lastId), parseInt(size)))
 })
 
@@ -37,13 +37,13 @@ propertyRouter.get('/master/detail', checkParams([
   { key: 'record_id', restrictions: ['integer', 'positive']},
   { key: 'type', restrictions: [c => ['0', '1', '2'].includes(c) ? '' : '应为0、1或2'] }
 ]), async ctx => {
-  let body = ctx.params as { record_id: string, type: string }
+  let body = ctx.query as { record_id: string, type: string }
   ctx.body = Result.success(await getBillDetails(parseInt(body.type), parseInt(body.record_id)))
 })
 
 propertyRouter.get('/separated/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as 'bike' | 'souvenir' | 'other'
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listSeparatedBill(category, parseInt(lastId), parseInt(size)))
 })
 
@@ -63,18 +63,18 @@ const userRouter = new Router()
 
 userRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as 'customer' | 'manager' | 'maintainer'
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listUsers(category, parseInt(lastId), parseInt(size)))
 })
 
 userRouter.get('/find', checkParams([
   { key: 'user_id', restrictions: ['integer', 'positive']},
 ]), async ctx => {
-  ctx.body = Result.success(await getUser(parseInt(ctx.params.user_id)))
+  ctx.body = Result.success(await getUser(parseInt(ctx.query.user_id)))
 })
 
 userRouter.get('/request/list', checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listSignUpRequests(parseInt(lastId), parseInt(size)))
 })
 
@@ -100,7 +100,7 @@ bikeRouter.get('/statistics', async ctx => {
 
 bikeRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
   let category = ctx.params.category as "danger" | "all" | "destroyed"
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listBikes(parseInt(lastId), parseInt(size), category))
 })
 
@@ -150,7 +150,7 @@ souvenirRouter.post('/add', checkBodyAsEntity(Souvenir), async ctx => {
 souvenirRouter.get('/exchanges/list', checkParams([
   { key: 'customer_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listExchanges(parseInt(ctx.params.customer_id)))
+  ctx.body = Result.success(await listExchanges(parseInt(ctx.query.customer_id)))
 })
 
 souvenirRouter.post('/exchanges/give', checkBody([

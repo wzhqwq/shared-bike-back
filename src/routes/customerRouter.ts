@@ -20,7 +20,7 @@ bikeRouter.get("/list", checkParams([
   { key: 'longitude', restrictions: ['geographical'] },
   { key: 'latitude', restrictions: ['geographical'] },
 ]), async ctx => {
-  let { longitude, latitude } = ctx.params as { longitude: string, latitude: string }
+  let { longitude, latitude } = ctx.query as { longitude: string, latitude: string }
   ctx.body = Result.success(await listBikesAround(parseFloat(longitude), parseFloat(latitude), CUSTOMER_USER))
 })
 
@@ -28,14 +28,14 @@ bikeRouter.get("/parking_point/list", checkParams([
   { key: 'longitude', restrictions: ['geographical'] },
   { key: 'latitude', restrictions: ['geographical'] },
 ]), async ctx => {
-  let { longitude, latitude } = ctx.params as { longitude: string, latitude: string }
+  let { longitude, latitude } = ctx.query as { longitude: string, latitude: string }
   ctx.body = Result.success(await listParkingPointAround(parseFloat(longitude), parseFloat(latitude)))
 })
 
 bikeRouter.get("/find", checkParams([
   { key: "series_no", restrictions: [lengthRestriction()] }
 ]), async ctx => {
-  ctx.body = Result.success(await getBikeBySeriesNo(ctx.params.series_no))
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no))
 })
 
 bikeRouter.post("/unlock", checkBody([
@@ -59,20 +59,20 @@ bikeRouter.post("/report", checkBodyAsEntityList(MalfunctionRecord), async ctx =
 })
 
 bikeRouter.get("/record/list/ride", checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listRideRecords(ctx.state.user.id, parseInt(lastId), parseInt(size)))
 })
 
 bikeRouter.get("/record/list/malfunction", checkParams([
   { key: 'ride_id', restrictions: ['integer'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listMalfunctionRecords(ctx.state.user.id, parseInt(ctx.params.ride_id)))
+  ctx.body = Result.success(await listMalfunctionRecords(ctx.state.user.id, parseInt(ctx.query.ride_id)))
 })
 
 let propertyRouter = new Router()
 
 propertyRouter.get("/list/:type", checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   let type = ctx.params.type as "points" | "deposit" | "recharge"
   switch(type) {
     case 'points':
@@ -98,7 +98,7 @@ souvenirRouter.get("/items/list", async ctx => {
 })
 
 souvenirRouter.get("/exchanged/list", checkParams(paginatorParams), async ctx => {
-  let { lastId, size } = ctx.params as Paginator
+  let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listExchangeRecords(ctx.state.user.id, parseInt(lastId), parseInt(size)))
 })
 
