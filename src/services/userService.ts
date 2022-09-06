@@ -22,7 +22,7 @@ export function signIn(user: RawUser) {
     if (!dbUser) throw new LogicalError("用户不存在")
     if (dbUser.password !== digest(user.password)) throw new LogicalError("密码不正确")
     
-    return signJwt(user)
+    return signJwt(dbUser)
   })
 }
 
