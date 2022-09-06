@@ -37,7 +37,7 @@ export class Bike {
   }
 
   public async unlock(s: string) {
-    let result = bikeComm.decrypt(s)
+    let result = await bikeComm.decrypt(s)
     if (result.length !== 2) throw new LogicalError("单车认证失败")
     let [token, id] = result
     if (token.length !== 20) throw new LogicalError("单车认证失败")
@@ -47,11 +47,11 @@ export class Bike {
     this.raw.token = token
     await this.bikeDb.save(this.raw)
 
-    return bikeComm.encrypt([token])
+    return await bikeComm.encrypt([token])
   }
 
   public async updateWhileRiding(s: string, userId: number) {
-    let result = bikeComm.decrypt(s)
+    let result = await bikeComm.decrypt(s)
     if (result.length !== 5) throw new LogicalError("数据同步失败")
     let token = result[0], status = parseInt(result[1]), mileage = parseFloat(result[2]),
       posLongitude = result[3], posLatitude = result[4]

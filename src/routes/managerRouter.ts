@@ -12,7 +12,7 @@ import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
 import { addMalfunction, addSeries, addSouvenir, cachedConfigs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
-import { getBikeStatistics, getBillDetails, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
+import { getBikeStatistics, getBillDetails, getBillStatistics, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser, listMaintainersInSection } from "../services/userService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
@@ -22,23 +22,27 @@ managerRouter.use(roleOnly(MANAGER_USER))
 
 const propertyRouter = new Router()
 
-propertyRouter.get('/separated/list/:category', checkParams(paginatorParams), async ctx => {
-  let category = ctx.params.category as 'bike' | 'souvenir' | 'other'
-  let { lastId, size } = ctx.params as Paginator
-  ctx.body = Result.success(await listSeparatedBill(category, parseInt(lastId), parseInt(size)))
-})
-
 propertyRouter.get('/master/list', checkParams(paginatorParams), async ctx => {
   let { lastId, size } = ctx.params as Paginator
   ctx.body = Result.success(await listMasterBill(parseInt(lastId), parseInt(size)))
 })
 
-propertyRouter.get('/detail', checkParams([
+propertyRouter.get('/master/statistics', async ctx => {
+  ctx.body = Result.success(await getBillStatistics())
+})
+
+propertyRouter.get('/master/detail', checkParams([
   { key: 'record_id', restrictions: ['integer', 'positive']},
   { key: 'type', restrictions: [c => ['0', '1', '2'].includes(c) ? '' : '应为0、1或2'] }
 ]), async ctx => {
   let body = ctx.params as { record_id: string, type: string }
   ctx.body = Result.success(await getBillDetails(parseInt(body.type), parseInt(body.record_id)))
+})
+
+propertyRouter.get('/separated/list/:category', checkParams(paginatorParams), async ctx => {
+  let category = ctx.params.category as 'bike' | 'souvenir' | 'other'
+  let { lastId, size } = ctx.params as Paginator
+  ctx.body = Result.success(await listSeparatedBill(category, parseInt(lastId), parseInt(size)))
 })
 
 propertyRouter.post('/separated/add/bike', checkBodyAsEntity(BikeBill), async ctx => {

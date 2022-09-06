@@ -37,6 +37,21 @@ export function listMasterBill(lastId: number, size: number = 20) {
   })
 }
 
+export function getBillStatistics() {
+  return transactionWrapper("billStatistics", async connection => {
+    const startTime = new Date()
+    startTime.setDate(1)
+    startTime.setHours(0, 0, 0, 0)
+    let income = (await query<{ c: number }>(
+      "SELECT SUM(`change`) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` > 0.00", [startTime], connection
+    ))[0].c
+    let expenditure = (await query<{ c: number }>(
+      "SELECT (0 - SUM(`change`)) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` < 0.00", [startTime], connection
+    ))[0].c
+    return { income, expenditure }
+  })
+}
+
 export function getBillDetails(type: number, recordId: number) {
   return transactionWrapper("getBillDetails", async connection => {
     let CLeft: { new(...args: any[]): RideRecord | BikeBill | SouvenirBill | OtherBill }
