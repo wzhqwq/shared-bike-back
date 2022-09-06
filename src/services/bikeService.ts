@@ -244,20 +244,20 @@ export function registerBike(encrypted: string, seriesId: number) {
   return transactionWrapper("registerBike", async (connection) => {
     if (!cachedSeriesList.some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")
 
-    let messages = await bikeComm.decrypt(encrypted)
+    let messages = bikeComm.decrypt(encrypted)
     if (messages.length !== 3) throw new LogicalError("单车识别失败")
     let [seriesNo, posLongitude, posLatitude] = messages
     if (seriesNo.length !== 20 || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
       throw new LogicalError("单车识别失败")
 
     let bikeId = await new Bike(connection).newBike(seriesId, posLongitude, posLatitude, seriesNo)
-    return await bikeComm.encrypt([seriesNo, bikeId.toString()])
+    return bikeComm.encrypt([seriesNo, bikeId.toString()])
   })
 }
 
 export function activateBike(encrypted: string) {
   return transactionWrapper("registerBike", async (connection) => {
-    let bikeId = parseInt(await bikeComm.decrypt(encrypted)[0])
+    let bikeId = parseInt(bikeComm.decrypt(encrypted)[0])
     if (isNaN(bikeId)) throw new LogicalError("单车激活失败")
 
     let bike = await (new Bike(connection).fetchBike(bikeId))

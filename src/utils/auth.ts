@@ -1,13 +1,9 @@
 import jwt = require("koa-jwt")
 import { sign } from "jsonwebtoken"
-const crypto = import('crypto-es')
-import { getLogger } from "log4js"
-
+import * as crypto from 'crypto-js'
 import { JWT_SECRET } from "../constant/values"
 import { Middleware } from "koa"
 import { PermissionError } from "./errors"
-
-const logger = getLogger()
 
 export const jwtMiddleware = jwt({ secret: JWT_SECRET, algorithms: ["HS256"] })
 
@@ -31,11 +27,11 @@ export const signJwt = (payload: JwtPayload) => sign(
 )
 
 class BikeCommunication {
-  public async encrypt(values: string[]) {
-    return (await crypto).default.AES.encrypt(values.join('$'), 'bike').toString()
+  public encrypt(values: string[]) {
+    return crypto.AES.encrypt(values.join('$'), 'bike').toString()
   }
-  public async decrypt(encrypted: string) {
-    return (await crypto).default.AES.decrypt(encrypted, 'bike').toString().split('$')
+  public decrypt(encrypted: string) {
+    return crypto.AES.decrypt(encrypted, 'bike').toString().split('$')
   }
 }
 
