@@ -4,9 +4,9 @@ import { getProperties } from "../entities/entity"
 type BuiltInRestriction = "string" | "number" | "integer" | "positive" | "geographical" | "price" | "imageKey"
 type BuiltInParamRestriction = "integer" | "positive" | "geographical" | "imageKey"
 
-export const posDecimal = /^[+-]?\d{,3}\.\d{6}$/
-export const priceDecimal = /^\d{,8}\.\d{2}$/
-export const imageKeyName = /^[0-9a-z]*$/
+export const posDecimal = /^[+-]?\d{1,3}\.\d{6}$/
+export const priceDecimal = /^\d{1,8}\.\d{2}$/
+export const imageKeyName = /^[0-9a-f]*$/
 
 const allRestrictions: { [key in BuiltInRestriction]: (o: any) => string } = {
   string: o => typeof o === "string" ? '' : '应为字符串',
