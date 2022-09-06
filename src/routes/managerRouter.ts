@@ -70,7 +70,7 @@ userRouter.get('/list/:category', checkParams(paginatorParams), async ctx => {
 userRouter.get('/find', checkParams([
   { key: 'user_id', restrictions: ['integer', 'positive']},
 ]), async ctx => {
-  ctx.body = Result.success(await getUser(parseInt(ctx.query.user_id)))
+  ctx.body = Result.success(await getUser(parseInt(ctx.query.user_id as string)))
 })
 
 userRouter.get('/request/list', checkParams(paginatorParams), async ctx => {
@@ -150,7 +150,7 @@ souvenirRouter.post('/add', checkBodyAsEntity(Souvenir), async ctx => {
 souvenirRouter.get('/exchanges/list', checkParams([
   { key: 'customer_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listExchanges(parseInt(ctx.query.customer_id)))
+  ctx.body = Result.success(await listExchanges(parseInt(ctx.query.customer_id as string)))
 })
 
 souvenirRouter.post('/exchanges/give', checkBody([

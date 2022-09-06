@@ -35,7 +35,7 @@ bikeRouter.get("/parking_point/list", checkParams([
 bikeRouter.get("/find", checkParams([
   { key: "series_no", restrictions: [lengthRestriction()] }
 ]), async ctx => {
-  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no))
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no as string))
 })
 
 bikeRouter.post("/unlock", checkBody([
@@ -66,7 +66,7 @@ bikeRouter.get("/record/list/ride", checkParams(paginatorParams), async ctx => {
 bikeRouter.get("/record/list/malfunction", checkParams([
   { key: 'ride_id', restrictions: ['integer'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listMalfunctionRecords(ctx.state.user.id, parseInt(ctx.query.ride_id)))
+  ctx.body = Result.success(await listMalfunctionRecords(ctx.state.user.id, parseInt(ctx.query.ride_id as string)))
 })
 
 let propertyRouter = new Router()

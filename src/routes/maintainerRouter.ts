@@ -20,7 +20,7 @@ maintainerRouter.get('/list_sections', async ctx => {
 maintainerRouter.get('/list_parking_points', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.query.section_id)))
+  ctx.body = Result.success(await listParkingPointInSection(parseInt(ctx.query.section_id as string)))
 })
 
 const bikeRouter = new Router()
@@ -28,19 +28,19 @@ const bikeRouter = new Router()
 bikeRouter.get('/list', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listBikesInSection(parseInt(ctx.query.section_id)))
+  ctx.body = Result.success(await listBikesInSection(parseInt(ctx.query.section_id as string)))
 })
 
 bikeRouter.get('/list_to_move', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await checkAndPlan(parseInt(ctx.query.section_id)))
+  ctx.body = Result.success(await checkAndPlan(parseInt(ctx.query.section_id as string)))
 })
 
 bikeRouter.get("/find", checkParams([
   { key: "series_no", restrictions: [lengthRestriction()] }
 ]), async ctx => {
-  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no))
+  ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no as string))
 })
 
 bikeRouter.post('/register', checkBody([
