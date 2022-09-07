@@ -208,7 +208,7 @@ parkingPointRouter.post('/remove', checkBody([
 const configRouter = new Router()
 
 configRouter.get('/list', async ctx => {
-  ctx.body = cachedConfigs
+  ctx.body = Result.success(cachedConfigs)
 })
 
 configRouter.post('/modify', checkBodyAsEntityList(Configuration), async ctx => {
