@@ -13,7 +13,7 @@ export class Configuration {
   @Column(Number)
   public value: number
 
-  @Column(Number)
   @Readonly
+  @Column(Number)
   public is_float: number
 }
