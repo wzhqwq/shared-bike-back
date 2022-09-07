@@ -192,7 +192,9 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
       new DbEntity(RawUser).asTable(),
       connection
     )
-    return (await db.list()).map(([x, u]) => mixUser(u, x))
+    return (await db.list())
+      .map(([x, u]) => mixUser(u, x))
+      .sort((a, b) => b.id - a.id)
   })
 }
 
