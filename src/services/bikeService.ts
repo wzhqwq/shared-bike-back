@@ -38,6 +38,7 @@ export function listBikes(lastId: number, size: number = 20, filter: "danger" | 
     )
     return (await joinedDb.list())
       .map(([b, s]) => ({ ...b, series_name: s.name }))
+      .sort((a, b) => b.id - a.id)
   })
 }
 
@@ -227,7 +228,9 @@ export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, siz
       new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
       new DbEntity(MalfunctionRecord).asTable([[['id'], '<', lastId], [['status'], '=', REPAIR_UNHANDLED]]),
       connection
-    ).list(undefined, undefined, size, { key: 'id', mode: 'DESC' })).map(([r, m]) => m)
+    ).list(undefined, undefined, size, { key: 'id', mode: 'DESC' }))
+      .map(([r, m]) => m)
+      .sort((a, b) => b.id - a.id)
   })
 }
 
