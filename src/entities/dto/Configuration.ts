@@ -13,4 +13,7 @@ export class Configuration {
 
   @Column(Number)
   public value: number
+
+  @Column(Number)
+  public isMoney: number
 }
