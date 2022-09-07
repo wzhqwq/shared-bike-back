@@ -235,7 +235,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     let leftId = e.column.key, rightId = e.column.FK.key
 
     let q: QueryOptions = {
-      sql: `SELECT ${columns ? '??' : '*'} FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
+      sql: `SELECT ${columns ? '??' : '*'} FROM (${this.leftTable[0]}) AS l JOIN (${this.rightTable[0]}) AS r ON l.?? = r.??` +
         (whereClause ? ` WHERE ${whereClause}` : '') +
         (sort ? ` ORDER BY ${sort.key.toString()} ${sort.mode}` : '') +
         (limit ? ` LIMIT ${limit}` : ''),
