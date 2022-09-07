@@ -246,9 +246,9 @@ export function listRepair(maintainerId: number, lastId: number, size: number = 
 export function listRepairByDate(maintainerId: number) {
   return transactionWrapper("listRepairByDate", async (connection) => {
     let start = new Date(new Date().valueOf() - 20 * 3600 * 1000)
-    return (await query<{ c: number, d: string }>(
+    return (await query<{ c: string, d: string }>(
       "SELECT c AS COUNT(*), d AS DATE(`time`) FROM RepairRecord GROUP BY DATE(`time`) WHERE `time` > ? AND maintainer_id = ?",
-      [start, maintainerId], connection))
+      [start, maintainerId], connection)).map(({ c, d }) => ({ count: parseInt(c), date: d }))
   })
 }
 

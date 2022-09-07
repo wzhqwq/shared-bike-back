@@ -42,12 +42,12 @@ export function getBillStatistics() {
     const startTime = new Date()
     startTime.setDate(1)
     startTime.setHours(0, 0, 0, 0)
-    let income = (await query<{ c: number }>(
+    let income = parseFloat((await query<{ c: string }>(
       "SELECT SUM(`change`) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` > 0.00", [startTime], connection
-    ))[0].c ?? 0
-    let expenditure = (await query<{ c: number }>(
+    ))[0].c)
+    let expenditure = parseFloat((await query<{ c: string }>(
       "SELECT (0 - SUM(`change`)) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` < 0.00", [startTime], connection
-    ))[0].c ?? 0
+    ))[0].c)
     return { income, expenditure }
   })
 }
@@ -132,18 +132,18 @@ export function recordOtherBill(record: OtherBill, managerId: number) {
 
 export function getBikeStatistics() {
   return transactionWrapper("getBikeStatistics", async connection => {
-    let availableCount = (await query<{ c: number }>(
+    let availableCount = parseInt((await query<{ c: string }>(
       "SELECT COUNT(*) AS c FROM `Bike` WHERE `status` = ?", [BIKE_AVAILABLE], connection
-    ))[0].c
-    let occupiedCount = (await query<{ c: number }>(
+    ))[0].c)
+    let occupiedCount = parseInt((await query<{ c: string }>(
       "SELECT COUNT(*) AS c FROM `Bike` WHERE `status` = ?", [BIKE_OCCUPIED], connection
-    ))[0].c
-    let unavailableCount = (await query<{ c: number }>(
+    ))[0].c)
+    let unavailableCount = parseInt((await query<{ c: string }>(
       "SELECT COUNT(*) AS c FROM `Bike` WHERE `status` = ?", [BIKE_UNAVAILABLE], connection
-    ))[0].c
-    let destroyedCount = (await query<{ c: number }>(
+    ))[0].c)
+    let destroyedCount = parseInt((await query<{ c: string }>(
       "SELECT COUNT(*) AS c FROM `Bike` WHERE `status` = ?", [BIKE_DESTROYED], connection
-    ))[0].c
+    ))[0].c)
     return { availableCount, occupiedCount, unavailableCount, destroyedCount }
   })
 }
