@@ -12,7 +12,7 @@ import { Souvenir } from "../entities/dto/Souvenir";
 import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
-import { addMalfunction, addSeries, addSouvenir, getConfigs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
+import { addMalfunction, addSeries, addSouvenir, getConfigs, modifyMalfunctionName, modifySeries, modifySouvenir, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, getBillStatistics, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser, listMaintainersInSection } from "../services/userService";
 import { roleOnly } from "../utils/auth";
@@ -145,6 +145,10 @@ const souvenirRouter = new Router()
 
 souvenirRouter.post('/add', checkBodyAsEntity(Souvenir), async ctx => {
   ctx.body = Result.success(await addSouvenir(ctx.request.body))
+})
+
+souvenirRouter.post('/modify', checkBodyAsEntity(Souvenir), async ctx => {
+  ctx.body = Result.success(await modifySouvenir(ctx.request.body))
 })
 
 souvenirRouter.get('/exchanges/list', checkParams([

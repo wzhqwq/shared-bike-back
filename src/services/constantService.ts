@@ -159,8 +159,8 @@ export function modifySouvenir(souvenir: Souvenir) {
   )
 }
 
-export function removeSouvenir(souvenirId: number) {
-  return transactionWrapper("removeSouvenir", async connection =>
-    await new DbEntity(Souvenir, connection).delete([[['id'], '=', souvenirId]])
-  )
-}
+// export function removeSouvenir(souvenirId: number) {
+//   return transactionWrapper("removeSouvenir", async connection =>
+//     await new DbEntity(Souvenir, connection).delete([[['id'], '=', souvenirId]])
+//   )
+// }
