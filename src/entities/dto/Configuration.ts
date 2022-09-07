@@ -6,7 +6,6 @@ export class Configuration {
   @Column(Number)
   public id: number
 
-  @Nullable
   @Readonly
   @Column(String)
   public key: string
@@ -15,5 +14,6 @@ export class Configuration {
   public value: number
 
   @Column(Number)
+  @Readonly
   public is_float: number
 }
