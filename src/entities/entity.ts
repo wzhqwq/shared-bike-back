@@ -228,7 +228,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     // LeftC.prototype
 
     let LeftC = this.leftTable[2], RightC = this.rightTable[2]
-    let leftTableName = getTableName(LeftC), rightTableName = getTableName(RightC)
+    let rightTableName = getTableName(RightC)
 
     let e = getProperties(new LeftC).find(k => k.column.FK?.tableName === rightTableName)
     if (!e) throw new Error("没有找到符合条件的外码")
@@ -250,8 +250,8 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
       let left = new LeftC(), right = new RightC()
       let leftProperties = getProperties(left)
       let rightProperties = getProperties(right)
-      leftProperties.forEach(k => k.value = o[leftTableName][k.column.key])
-      rightProperties.forEach(k => k.value = o[rightTableName][k.column.key])
+      leftProperties.forEach(k => k.value = o['l'][k.column.key])
+      rightProperties.forEach(k => k.value = o['r'][k.column.key])
       return [left, right]
     })
   }
