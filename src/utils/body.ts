@@ -96,7 +96,13 @@ export function checkBodyAsEntity<T extends Object>(C: { new (...args: any[]): T
     try {
       let entity = new C()
       let params = getProperties(entity)
-      params.forEach(param => entity[param.column.key] = o[param.column.key])
+      params.forEach(param => {
+        const p = o[param.column.key]
+        checkProperty(param.column, p)
+        if (typeof p === 'undefined') return
+        param.value = o[param.column.key]
+        param.modified = true
+      })
       ctx.request.body = entity
     }
     catch (e) {
@@ -116,7 +122,13 @@ export function checkBodyAsEntityList<T extends Object>(C: { new (...args: any[]
       ctx.request.body = list.map(o => {
         let entity = new C()
         let params = getProperties(entity)
-        params.forEach(param => entity[param.column.key] = o[param.column.key])
+        params.forEach(param => {
+          const p = o[param.column.key]
+          checkProperty(param.column, p)
+          if (typeof p === 'undefined') return
+          param.value = o[param.column.key]
+          param.modified = true
+        })
         return entity
       })
     }
