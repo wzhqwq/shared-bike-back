@@ -11,15 +11,19 @@ import { LogicalError } from "../utils/errors";
 
 const lock = Lock()
 
-export let cachedConfigs: Configuration[]
-export let cachedMalfunctions: Malfunction[]
-export let cachedSeriesList: BikeSeries[]
+let cachedConfigs: Configuration[]
+let cachedMalfunctions: Malfunction[]
+let cachedSeriesList: BikeSeries[]
 
 export const initializeCache = async () => {
   cachedConfigs = await new DbEntity(Configuration).list()
   cachedMalfunctions = await new DbEntity(Malfunction).list()
   cachedSeriesList = await new DbEntity(BikeSeries).list()
 }
+
+export const getConfigs = () => cachedConfigs
+export const getMalfunctions = () => cachedMalfunctions
+export const getSeriesList = () => cachedSeriesList
 
 export function getConfigValue(id: number) {
   return cachedConfigs[id].value
@@ -129,11 +133,9 @@ export function addMalfunction(malfunction: Malfunction) {
 
 export function modifyMalfunctionName(malfunctionId: number, name: string) {
   return transactionWrapper("modifyMalfunctionName", async connection => {
-    let db = new DbEntity(Malfunction, connection)
-    await db.update([['part_name', name]], [[['id'], '=', malfunctionId]])
-    lock('malfunction', async release => {
-      let malfunction = await db.pullBySearching([[['id'], '=', malfunctionId]])
-      cachedMalfunctions = cachedMalfunctions.map(m => m.id == malfunctionId ? malfunction : m)
+    await new DbEntity(Malfunction, connection).update([['part_name', name]], [[['id'], '=', malfunctionId]])
+    lock('malfunction', release => {
+      getMalfunction(malfunctionId).part_name = name
       release()
     })
   })

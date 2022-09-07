@@ -12,7 +12,7 @@ import { Souvenir } from "../entities/dto/Souvenir";
 import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
-import { addMalfunction, addSeries, addSouvenir, cachedConfigs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
+import { addMalfunction, addSeries, addSouvenir, getConfigs, modifyMalfunctionName, modifySeries, removeSeries, setConfig } from "../services/constantService";
 import { getBikeStatistics, getBillDetails, getBillStatistics, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser, listMaintainersInSection } from "../services/userService";
 import { roleOnly } from "../utils/auth";
@@ -208,7 +208,7 @@ parkingPointRouter.post('/remove', checkBody([
 const configRouter = new Router()
 
 configRouter.get('/list', async ctx => {
-  ctx.body = Result.success(cachedConfigs)
+  ctx.body = Result.success(getConfigs())
 })
 
 configRouter.post('/modify', checkBodyAsEntityList(Configuration), async ctx => {

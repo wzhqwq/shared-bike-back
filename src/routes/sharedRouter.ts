@@ -2,7 +2,7 @@ import body = require("koa-body")
 import Router = require("@koa/router")
 import Result from "../entities/vo/Result"
 import { listSection } from "../services/bikeService"
-import { cachedMalfunctions, cachedSeriesList, listSouvenirs } from "../services/constantService"
+import { getMalfunctions, getSeriesList, listSouvenirs } from "../services/constantService"
 
 const sharedRouter = new Router()
 sharedRouter.use(body())
@@ -22,13 +22,13 @@ souvenirRouter.get('/list', async ctx => {
 const malfunctionRouter = new Router()
 
 malfunctionRouter.get('/list', async ctx => {
-  ctx.body = Result.success(cachedMalfunctions)
+  ctx.body = Result.success(getMalfunctions())
 })
 
 const bikeSeriesRouter = new Router()
 
 bikeSeriesRouter.get('/list', async ctx => {
-  ctx.body = Result.success(cachedSeriesList)
+  ctx.body = Result.success(getSeriesList())
 })
 
 sharedRouter.use('/section', sectionRouter.routes())

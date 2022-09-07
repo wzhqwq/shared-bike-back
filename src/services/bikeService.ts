@@ -7,7 +7,7 @@ import { ConditionType, DbEntity, DbJoined } from "../entities/entity"
 import { listHide } from "../entities/vo/Result"
 import { query, transactionWrapper } from "../utils/db"
 import { LogicalError } from "../utils/errors"
-import { getConfigValue, cachedMalfunctions, cachedSeriesList, getSeries, decreaseSeriesCount, increaseSeriesCount } from "./constantService"
+import { getConfigValue, getMalfunctions, getSeriesList, getSeries, decreaseSeriesCount, increaseSeriesCount } from "./constantService"
 import { bikeComm } from "../utils/auth"
 import { MaintainerSection, Section } from "../entities/dto/Section"
 import { ParkingPoint } from "../entities/dto/ParkingPoint"
@@ -183,7 +183,7 @@ export function handleMalfunction(repairRecord: RepairRecord) {
 
 export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: number) {
   return transactionWrapper("reportMalfunction", async (connection) => {
-    let malfunctionIds = cachedMalfunctions.map(m => m.id)
+    let malfunctionIds = getMalfunctions().map(m => m.id)
     if (mRecords.some(r => !malfunctionIds.includes(r.malfunction_id))) throw new LogicalError("故障ID不存在")
 
     let rideDb = new DbEntity(RideRecord, connection)
@@ -254,7 +254,7 @@ export function listRepairByDate(maintainerId: number) {
 
 export function registerBike(encrypted: string, seriesId: number) {
   return transactionWrapper("registerBike", async (connection) => {
-    if (!cachedSeriesList.some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")
+    if (!getSeriesList().some(s => s.id === seriesId)) throw new LogicalError("单车型号不存在")
 
     let messages = bikeComm.decrypt(encrypted)
     if (messages.length !== 3) throw new LogicalError("单车识别失败")
