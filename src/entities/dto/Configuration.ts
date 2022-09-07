@@ -15,5 +15,5 @@ export class Configuration {
   public value: number
 
   @Column(Number)
-  public is_money: number
+  public is_float: number
 }
