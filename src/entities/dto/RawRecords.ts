@@ -291,7 +291,7 @@ export class SignUpRequest extends BaseRecord {
   public name: string
   
   @Nullable
-  @Restriction(c => [0, 1].includes(c) ? '' : '应为0、1或2')
+  @Restriction(c => [0, 1, 2].includes(c) ? '' : '应为0、1或2')
   @Column(Number)
   public status: number
 }
