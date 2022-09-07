@@ -8,7 +8,7 @@ export default class Result<T> {
   ) { }
   
   public static success<T>(data: T) {
-    return new Result<T>(true, data)
+    return new Result<T>(true, data ?? null)
   }
 
   public static fail(error: string) {

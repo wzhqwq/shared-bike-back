@@ -22,13 +22,13 @@ souvenirRouter.get('/list', async ctx => {
 const malfunctionRouter = new Router()
 
 malfunctionRouter.get('/list', async ctx => {
-  ctx.body = cachedMalfunctions
+  ctx.body = Result.success(cachedMalfunctions)
 })
 
 const bikeSeriesRouter = new Router()
 
 bikeSeriesRouter.get('/list', async ctx => {
-  ctx.body = cachedSeriesList
+  ctx.body = Result.success(cachedSeriesList)
 })
 
 sharedRouter.use('/section', sectionRouter.routes())
