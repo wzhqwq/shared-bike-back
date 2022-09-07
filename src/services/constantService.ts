@@ -74,7 +74,6 @@ export async function increaseSeriesCount(id: number, connection: PoolConnection
 
 export function addSeries(series: BikeSeries) {
   return transactionWrapper("addSeries", async connection => {
-    series.amount = 0
     await new DbEntity(BikeSeries, connection).append(series)
     lock('series', release => {
       cachedSeriesList = [...cachedSeriesList, series]
