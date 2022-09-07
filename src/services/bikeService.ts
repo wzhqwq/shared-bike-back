@@ -5,7 +5,7 @@ import { Malfunction } from "../entities/dto/Malfunction"
 import { DestroyRecord, MalfunctionRecord, RepairRecord, RideRecord } from "../entities/dto/RawRecords"
 import { ConditionType, DbEntity, DbJoined } from "../entities/entity"
 import { listHide } from "../entities/vo/Result"
-import { transactionWrapper } from "../utils/db"
+import { query, transactionWrapper } from "../utils/db"
 import { LogicalError } from "../utils/errors"
 import { getConfigValue, cachedMalfunctions, cachedSeriesList, getSeries, decreaseSeriesCount, increaseSeriesCount } from "./constantService"
 import { bikeComm } from "../utils/auth"
@@ -222,7 +222,7 @@ export function listMalfunctionRecords(customerId: number, rideId: number) {
 }
 
 export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, size: number = 20) {
-  return transactionWrapper("listMalfunctionRecords", async (connection) => {
+  return transactionWrapper("listMalfunctionRecordsOfBike", async (connection) => {
     return (await new DbJoined(
       new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
       new DbEntity(MalfunctionRecord).asTable([[['id'], '<', lastId], [['status'], '=', REPAIR_UNHANDLED]]),
@@ -232,11 +232,20 @@ export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, siz
 }
 
 export function listRepair(maintainerId: number, lastId: number, size: number = 20) {
-  return transactionWrapper("listMalfunctionRecords", async (connection) => {
+  return transactionWrapper("listRepair", async (connection) => {
     return await new DbEntity(RepairRecord, connection).list([
       [['maintainer_id'], '=', maintainerId],
       [['id'], '<', lastId],
     ], undefined, size, { key: 'id', mode: 'DESC' })
+  })
+}
+
+export function listRepairByDate(maintainerId: number) {
+  return transactionWrapper("listRepairByDate", async (connection) => {
+    let start = new Date(new Date().valueOf() - 20 * 3600 * 1000)
+    return (await query<{ c: number, d: string }>(
+      "SELECT c AS COUNT(*), d AS DATE(`time`) FROM RepairRecord GROUP BY DATE(`time`) WHERE `time` > ? AND maintainer_id = ?",
+      [start, maintainerId], connection))
   })
 }
 

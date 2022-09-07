@@ -44,10 +44,10 @@ export function getBillStatistics() {
     startTime.setHours(0, 0, 0, 0)
     let income = (await query<{ c: number }>(
       "SELECT SUM(`change`) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` > 0.00", [startTime], connection
-    ))[0].c
+    ))[0].c ?? 0
     let expenditure = (await query<{ c: number }>(
       "SELECT (0 - SUM(`change`)) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` < 0.00", [startTime], connection
-    ))[0].c
+    ))[0].c ?? 0
     return { income, expenditure }
   })
 }
