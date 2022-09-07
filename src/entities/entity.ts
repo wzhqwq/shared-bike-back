@@ -177,7 +177,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     return (await this.query<TEntity>(
       `SELECT ${columns ? '??' : '*'} FROM ??` +
         (whereClause ? ` WHERE ${whereClause}` : '') +
-        (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+        (sort ? ` ORDER BY ${sort.key.toString()} ${sort.mode}` : '') +
         (limit ? ` LIMIT ${limit}` : ''),
       [...(columns ? [columns] : []), tableName, ...additionalValues],
     )).map(o => {
@@ -200,7 +200,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
       whereClause && limit ?
         "SELECT * FROM ??" +
           (whereClause ? ` WHERE ${whereClause}` : '') +
-          (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+          (sort ? ` ORDER BY ${sort.key.toString()} ${sort.mode}` : '') +
           (limit ? ` LIMIT ${limit}` : '') :
         "??",
       [tableName, ...additionalValues],
@@ -237,7 +237,7 @@ export class DbJoined<TLeft extends Object, TRight extends Object> extends BaseD
     let q: QueryOptions = {
       sql: `SELECT ${columns ? '??' : '*'} FROM (${this.leftTable[0]}) AS left JOIN (${this.rightTable[0]}) AS right ON left.?? = right.??` +
         (whereClause ? ` WHERE ${whereClause}` : '') +
-        (sort ? ` SORT BY ${sort.key.toString()} ${sort.mode}` : '') +
+        (sort ? ` ORDER BY ${sort.key.toString()} ${sort.mode}` : '') +
         (limit ? ` LIMIT ${limit}` : ''),
       nestTables: true
     }
