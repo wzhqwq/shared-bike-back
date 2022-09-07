@@ -74,8 +74,10 @@ export async function increaseSeriesCount(id: number, connection: PoolConnection
 
 export function addSeries(series: BikeSeries) {
   return transactionWrapper("addSeries", async connection => {
-    await new DbEntity(BikeSeries, connection).append(series)
-    lock('series', release => {
+    let db = new DbEntity(BikeSeries, connection)
+    await db.append(series)
+    lock('series', async release => {
+      series = await db.pullBySearching([[['id'], '=', series.id]])
       cachedSeriesList = [...cachedSeriesList, series]
       release()
     })
@@ -83,9 +85,15 @@ export function addSeries(series: BikeSeries) {
 }
 
 export function modifySeries(series: BikeSeries) {
-  return transactionWrapper("modifySeries", async connection =>
-    await new DbEntity(BikeSeries, connection).save(series)
-  )
+  return transactionWrapper("modifySeries", async connection => {
+    let db = new DbEntity(BikeSeries, connection)
+    await db.save(series)
+    lock('series', async release => {
+      series = await db.pullBySearching([[['id'], '=', series.id]])
+      cachedSeriesList = [...cachedSeriesList, series]
+      release()
+    })
+  })
 }
 
 export function removeSeries(seriesId: number) {
