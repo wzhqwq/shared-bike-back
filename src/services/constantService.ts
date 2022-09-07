@@ -90,7 +90,7 @@ export function modifySeries(series: BikeSeries) {
     await db.save(series)
     lock('series', async release => {
       series = await db.pullBySearching([[['id'], '=', series.id]])
-      cachedSeriesList = [...cachedSeriesList, series]
+      cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
       release()
     })
   })
@@ -129,9 +129,11 @@ export function addMalfunction(malfunction: Malfunction) {
 
 export function modifyMalfunctionName(malfunctionId: number, name: string) {
   return transactionWrapper("modifyMalfunctionName", async connection => {
-    await new DbEntity(Malfunction, connection).update([['part_name', name]], [[['id'], '=', malfunctionId]])
-    lock('malfunction', release => {
-      getMalfunction(malfunctionId).part_name = name
+    let db = new DbEntity(Malfunction, connection)
+    await db.update([['part_name', name]], [[['id'], '=', malfunctionId]])
+    lock('malfunction', async release => {
+      let malfunction = await db.pullBySearching([[['id'], '=', malfunctionId]])
+      cachedMalfunctions = cachedMalfunctions.map(m => m.id == malfunctionId ? malfunction : m)
       release()
     })
   })
