@@ -183,11 +183,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     )).map(o => {
       let entity = new this.C()
       let properties = getProperties(entity)
-      properties.forEach(k => {
-        if (k.column.restrictions.includes('price')) k.value = o[k.column.key].toFixed(2)
-        else if (k.column.restrictions.includes('geographical')) k.value = o[k.column.key].toFixed(6)
-        else k.value = o[k.column.key]
-      })
+      properties.forEach(k => k.value = o[k.column.key])
       return entity
     })
   }

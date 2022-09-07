@@ -16,6 +16,8 @@ let pool = createPool({
   database: databaseName,
   user: "bike",
   password: databasePassword,
+  supportBigNumbers: true,
+  bigNumberStrings: true,
 })
 
 type QueryResult<RowT> = RowT[] & {
