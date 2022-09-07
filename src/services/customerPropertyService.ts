@@ -27,13 +27,13 @@ export function listPointChanges(customerId: number, lastId: number, size: numbe
 
 export function listExchangeRecords(customerId: number, lastId: number, size: number = 20) {
   return transactionWrapper("listExchangeRecords", async connection => {
-    return await new DbJoined(
+    return (await new DbJoined(
       new DbEntity(ExchangeRecord).asTable([
         [['customer_id'], '=', customerId],
         [['id'], '<', lastId],
       ], size, { key: 'id', mode: 'DESC' }),
       new DbEntity(Souvenir).asTable()
-    ).list()
+    ).list()).reverse()
   })
 }
 

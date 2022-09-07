@@ -106,7 +106,7 @@ export function listSignUpRequests(lastId: number, size: number = 20) {
       userDb.asTable(),
       connection
     )
-    return (await joinedDb.list()).map(([r, u]) => ({ ...r, nickname: u.nickname }))
+    return (await joinedDb.list()).reverse().map(([r, u]) => ({ ...r, nickname: u.nickname }))
   })
 }
 
