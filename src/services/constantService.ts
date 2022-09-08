@@ -80,8 +80,8 @@ export function addSeries(series: BikeSeries) {
   return transactionWrapper("addSeries", async connection => {
     let db = new DbEntity(BikeSeries, connection)
     await db.append(series)
-    lock('series', async release => {
-      series = await db.pullBySearching([[['id'], '=', series.id]])
+    series = await db.pullBySearching([[['id'], '=', series.id]])
+    lock('series', release => {
       cachedSeriesList = [...cachedSeriesList, series]
       release()
     })
@@ -92,8 +92,8 @@ export function modifySeries(series: BikeSeries) {
   return transactionWrapper("modifySeries", async connection => {
     let db = new DbEntity(BikeSeries, connection)
     await db.save(series)
-    lock('series', async release => {
-      series = await db.pullBySearching([[['id'], '=', series.id]])
+    series = await db.pullBySearching([[['id'], '=', series.id]])
+    lock('series', release => {
       cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
       release()
     })
