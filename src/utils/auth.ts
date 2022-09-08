@@ -31,7 +31,7 @@ class BikeCommunication {
     return crypto.AES.encrypt(values.join('$'), 'bike').toString()
   }
   public decrypt(encrypted: string) {
-    return crypto.AES.decrypt(encrypted, 'bike').toString().split('$')
+    return crypto.AES.decrypt(encrypted, 'bike').toString(crypto.enc.Utf8).split('$')
   }
 }
 
