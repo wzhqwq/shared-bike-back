@@ -83,6 +83,7 @@ export function addSeries(series: BikeSeries) {
     series = await db.pullBySearching([[['id'], '=', series.id]])
     lock('series', release => {
       cachedSeriesList = [...cachedSeriesList, series]
+      console.log(cachedSeriesList)
       release()
     })
   })
@@ -95,6 +96,7 @@ export function modifySeries(series: BikeSeries) {
     series = await db.pullBySearching([[['id'], '=', series.id]])
     lock('series', release => {
       cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
+      console.log(cachedSeriesList)
       release()
     })
   })
