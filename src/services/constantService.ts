@@ -1,4 +1,4 @@
-import { Lock } from "lock";
+import * as Lock from 'async-lock'
 import { PoolConnection } from "mysql";
 import { BIKE_DESTROYED } from "../constant/values";
 import { Configuration } from "../entities/dto/Configuration";
@@ -9,7 +9,7 @@ import { DbEntity } from "../entities/entity";
 import { transactionWrapper } from "../utils/db";
 import { LogicalError } from "../utils/errors";
 
-const lock = Lock()
+const lock = new Lock()
 
 let cachedConfigs: Configuration[]
 let cachedMalfunctions: Malfunction[]
@@ -39,7 +39,7 @@ export function setConfig(pairs: Configuration[]) {
     )
     let list = await configDb.list()
     // 写锁，避免业务代码冲突
-    lock('config', release => {
+    await lock.acquire('config', release => {
       cachedConfigs = list
       release()
     })
@@ -57,7 +57,7 @@ export async function decreaseSeriesCount(id: number, connection: PoolConnection
   ], [
     [['id'], '=', id]
   ])
-  lock('series', release => {
+  await lock.acquire('series', release => {
     cachedSeriesList.find(s => s.id === id).amount--
     release()
   })
@@ -70,7 +70,7 @@ export async function increaseSeriesCount(id: number, connection: PoolConnection
   ], [
     [['id'], '=', id]
   ])
-  lock('series', release => {
+  await lock.acquire('series', release => {
     cachedSeriesList.find(s => s.id === id).amount++
     release()
   })
@@ -81,9 +81,8 @@ export function addSeries(series: BikeSeries) {
     let db = new DbEntity(BikeSeries, connection)
     await db.append(series)
     series = await db.pullBySearching([[['id'], '=', series.id]])
-    lock('series', release => {
+    await lock.acquire('series', release => {
       cachedSeriesList = [...cachedSeriesList, series]
-      console.log(cachedSeriesList)
       release()
     })
   })
@@ -94,9 +93,8 @@ export function modifySeries(series: BikeSeries) {
     let db = new DbEntity(BikeSeries, connection)
     await db.save(series)
     series = await db.pullBySearching([[['id'], '=', series.id]])
-    lock('series', release => {
+    await lock.acquire('series', release => {
       cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
-      console.log(cachedSeriesList)
       release()
     })
   })
@@ -112,7 +110,7 @@ export function removeSeries(seriesId: number) {
       throw new LogicalError("存在仍在运营的、与该单车型号关联的单车")
     // 到这里与型号关联的单车都是报废或未注册的，在删除型号后，它们会被级联删除
     await db.delete([[['id'], '=', seriesId]])
-    lock('series', release => {
+    await lock.acquire('series', release => {
       cachedSeriesList = cachedSeriesList.filter(s => s.id !== seriesId)
       release()
     })
@@ -126,7 +124,7 @@ export function getMalfunction(id: number) {
 export function addMalfunction(malfunction: Malfunction) {
   return transactionWrapper("addMalfunction", async connection => {
     await new DbEntity(Malfunction, connection).append(malfunction)
-    lock('malfunction', release => {
+    await lock.acquire('malfunction', release => {
       cachedMalfunctions = [...cachedMalfunctions, malfunction]
       release()
     })
@@ -136,7 +134,7 @@ export function addMalfunction(malfunction: Malfunction) {
 export function modifyMalfunctionName(malfunctionId: number, name: string) {
   return transactionWrapper("modifyMalfunctionName", async connection => {
     await new DbEntity(Malfunction, connection).update([['part_name', name]], [[['id'], '=', malfunctionId]])
-    lock('malfunction', release => {
+    await lock.acquire('malfunction', release => {
       getMalfunction(malfunctionId).part_name = name
       release()
     })
