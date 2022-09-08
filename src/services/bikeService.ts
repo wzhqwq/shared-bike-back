@@ -395,7 +395,15 @@ export function listParkingPointInSection(sectionId: number) {
 
 export function createParkingPoint(pp: ParkingPoint) {
   return transactionWrapper("createParkingPoint", async (connection) => {
+    let sectionDb = new DbEntity(Section, connection)
+    let section = await sectionDb.pullBySearching([
+      [pp.p_longitude, 'BETWEEN', [['bl_longitude'], ['tr_longitude']]],
+      [pp.p_latitude, 'BETWEEN', [['bl_latitude'], ['tr_latitude']]],
+    ])
+    if (!section) throw new LogicalError('停车点应处于一个已知管理区内')
+
     let ppDb = new DbEntity(ParkingPoint, connection)
+    pp.section_id = section.id
     await ppDb.append(pp)
     return null
   })

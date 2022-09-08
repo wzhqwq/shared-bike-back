@@ -1,4 +1,4 @@
-import { Column, Entity, Foreign, Id, Nullable, Restriction } from "../entity"
+import { Column, Entity, Foreign, Id, Nullable, Readonly, Restriction } from "../entity"
 import { Section } from "./Section"
 
 @Entity('ParkingPoint')
@@ -15,7 +15,7 @@ export class ParkingPoint {
   @Column(String)
   public p_latitude: string
   
-  @Nullable
+  @Readonly
   @Column(Number)
   public bikes_count: number
   
