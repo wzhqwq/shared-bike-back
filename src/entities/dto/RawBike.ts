@@ -35,7 +35,7 @@ export class RawBike {
   public series_no: string
   
   @Foreign(BikeSeries, "id")
-  @Column(Number, MAINTAINER_USER)
+  @Column(Number)
   public series_id: number
   
   @Restriction('geographical')
@@ -46,21 +46,21 @@ export class RawBike {
   @Column(String)
   public p_latitude: string
   
-  @Column(Number, MAINTAINER_USER)
+  @Column(Number)
   public status: number
   
-  @Column(Number, MAINTAINER_USER)
+  @Column(Number)
   public mileage: number
   
   @Column(Number)
   public health: number
   
   @Nullable
-  @Column(Number, MAINTAINER_USER)
+  @Column(Number)
   public parking_section_id: number
   
   @Nullable
-  @Column(Number, MAINTAINER_USER)
+  @Column(Number)
   public parking_point_id: number
 
   @Column(String, 10)
