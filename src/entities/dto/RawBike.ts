@@ -30,7 +30,7 @@ export class RawBike {
   @Column(Number)
   public id: number
 
-  @Length()
+  @Length(12, 12)
   @Column(String)
   public series_no: string
   

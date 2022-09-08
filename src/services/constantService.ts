@@ -57,8 +57,9 @@ export async function decreaseSeriesCount(id: number, connection: PoolConnection
   ], [
     [['id'], '=', id]
   ])
+  let series = await seriesDb.pullBySearching([[['id'], '=', id]])
   await lock.acquire('series', release => {
-    cachedSeriesList.find(s => s.id === id).amount--
+    cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
     release()
   })
 }
@@ -70,8 +71,9 @@ export async function increaseSeriesCount(id: number, connection: PoolConnection
   ], [
     [['id'], '=', id]
   ])
+  let series = await seriesDb.pullBySearching([[['id'], '=', id]])
   await lock.acquire('series', release => {
-    cachedSeriesList.find(s => s.id === id).amount++
+    cachedSeriesList = cachedSeriesList.map(s => s.id == series.id ? series : s)
     release()
   })
 }

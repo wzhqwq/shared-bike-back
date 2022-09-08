@@ -263,7 +263,7 @@ export function registerBike(encrypted: string, seriesId: number) {
     let messages = bikeComm.decrypt(encrypted)
     if (messages.length !== 3) throw new LogicalError("单车识别失败")
     let [seriesNo, posLongitude, posLatitude] = messages
-    if (seriesNo.length !== 20 || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
+    if (seriesNo.length !== 12 || !posDecimal.test(posLongitude) || !posDecimal.test(posLatitude))
       throw new LogicalError("单车识别失败")
 
     let bikeId = await new Bike(connection).newBike(seriesId, posLongitude, posLatitude, seriesNo)

@@ -38,7 +38,7 @@ bikeRouter.get('/list_to_move', checkParams([
 })
 
 bikeRouter.get("/find", checkParams([
-  { key: "series_no", restrictions: [lengthRestriction()] }
+  { key: "series_no", restrictions: [lengthRestriction(12, 12)] }
 ]), async ctx => {
   ctx.body = Result.success(await getBikeBySeriesNo(ctx.query.series_no as string))
 })
