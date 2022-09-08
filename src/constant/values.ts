@@ -5,7 +5,7 @@ export const PASSWORD_SECRET = 'u56305obvriw'
 export const JWT_SECRET = 'u631eqsw91i6'
 export const IMAGE_BASE = path.resolve(__dirname,  '../../images')
 
-export const SEARCH_RANGE = 0.001
+export const SEARCH_RANGE = 0.002
 export const EXPAND_RATE = 0.0001
 
 export const REQUEST_UNHANDLED = 0
