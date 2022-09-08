@@ -250,7 +250,7 @@ export function listRepairByDate(maintainerId: number) {
     start.setHours(0, 0, 0, 0)
     start = new Date(start.valueOf() - 19 * DAY)
     return (await query<{ c: string, d: string }>(
-      "SELECT c AS COUNT(*), d AS DATE(`time`) FROM RepairRecord GROUP BY DATE(`time`) WHERE `time` > ? AND maintainer_id = ?",
+      "SELECT c AS COUNT(*), d AS DATE(`time`) FROM RepairRecord WHERE `time` > ? AND maintainer_id = ? GROUP BY DATE(`time`)",
       [start, maintainerId], connection))
       .map(({ c, d }) => ({ count: parseInt(c), date: d }))
   })
