@@ -199,7 +199,7 @@ export function listUsers(role: 'customer' | 'manager' | 'maintainer', lastId: n
 }
 
 export function listMaintainersInSection(sectionId?: number) {
-  return transactionWrapper("listSection", async (connection) => {
+  return transactionWrapper("listMaintainersInSection", async (connection) => {
     return (await new DbJoined(
       new DbEntity(MaintainerSection).asTable([[['section_id'], '=', sectionId]]),
       new DbEntity(RawMaintainer).asTable(),

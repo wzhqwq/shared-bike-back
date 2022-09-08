@@ -190,7 +190,7 @@ sectionRouter.post('/maintainer/:type', checkBodyAsEntity(MaintainerSection), as
 sectionRouter.get('/maintainer/list', checkParams([
   { key: 'section_id', restrictions: ['integer', 'positive'] },
 ]), async ctx => {
-  ctx.body = Result.success(await listMaintainersInSection(ctx.request.body))
+  ctx.body = Result.success(await listMaintainersInSection(parseInt(ctx.query.section_id as string)))
 })
 
 const parkingPointRouter = new Router()

@@ -193,7 +193,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let [whereClause, additionalValues] = parseCondition(conditions)
 
     return [
-      whereClause && limit ?
+      (whereClause || limit || sort) ?
         "(SELECT * FROM ??" +
           (whereClause ? ` WHERE ${whereClause}` : '') +
           (sort ? ` ORDER BY ${sort.key.toString()} ${sort.mode}` : '') +
@@ -282,6 +282,7 @@ function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntit
   return [sql.join(' AND '), values]
 }
 function parseExpression<TEntity extends Object>(expression: ExpressionType<TEntity>): [string, any[]] {
+  console.log(expression)
   if (expression instanceof Array) {
     if (expression.length == 1) return ['??', [expression]]
     let l = parseExpression(expression[0])
