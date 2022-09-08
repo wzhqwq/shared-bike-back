@@ -288,7 +288,7 @@ function parseExpression<TEntity extends Object>(expression: ExpressionType<TEnt
     let r = parseExpression(expression[2])
     return [`(${l[0]} ${expression[1]} ${r[0]})`, [...l[1], ...r[1]]]
   }
-  if (typeof expression == 'object' && !(expression instanceof Date)) {
+  if (typeof expression == 'object' && expression !== null && !(expression instanceof Date)) {
     return [`${expression.fn}(${expression.key.toString()})`, [expression.key.toString()]]
   }
   return ['?', [expression]]
