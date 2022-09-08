@@ -13,7 +13,6 @@ import { MaintainerSection, Section } from "../entities/dto/Section"
 import { ParkingPoint } from "../entities/dto/ParkingPoint"
 import { posDecimal } from "../utils/body"
 import { RawCustomer, RawMaintainer } from "../entities/dto/RawUser"
-import moment = require("moment")
 
 export function listBikes(lastId: number, size: number = 20, filter: "danger" | "all" | "destroyed", sectionId?: number) {
   return transactionWrapper("listBikes", async (connection) => {
@@ -250,12 +249,10 @@ export function listRepairByDate(maintainerId: number) {
     let start = new Date()
     start.setHours(0, 0, 0, 0)
     start = new Date(start.valueOf() - 19 * DAY)
-    let allDate = new Array(20).fill(0).map((_, i) => moment(new Date(start.valueOf() + i * DAY)).utcOffset('+0800').format('YYYY-MM-DD'))
-    let result = (await query<{ c: string, d: string }>(
+    return (await query<{ c: string, d: string }>(
       "SELECT c AS COUNT(*), d AS DATE(`time`) FROM RepairRecord GROUP BY DATE(`time`) WHERE `time` > ? AND maintainer_id = ?",
       [start, maintainerId], connection))
       .map(({ c, d }) => ({ count: parseInt(c), date: d }))
-    return allDate.map(s => result.find(r => r.date === s) ?? { count: 0, data: s })
   })
 }
 
