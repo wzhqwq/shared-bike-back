@@ -15,6 +15,8 @@ import path = require("path")
 import { initializeFs } from "./services/imageService"
 import sharedRouter from "./routes/sharedRouter"
 
+process.env.TZ = 'Asia/Shanghai'
+
 log4js.configure({
   appenders: {
     error: { type: "stdout", layout: { type: "basic" } },

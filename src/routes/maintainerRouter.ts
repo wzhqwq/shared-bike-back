@@ -5,7 +5,7 @@ import { GeoPoint, geoPointParams } from "../entities/dto/Geographical";
 import { Paginator, paginatorParams } from "../entities/dto/Paginator";
 import { RepairRecord } from "../entities/dto/RawRecords";
 import Result from "../entities/vo/Result";
-import { activateBike, checkAndPlan, finishMaintaining, getBikeBySeriesNo, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listSection, registerBike, startMaintaining } from "../services/bikeService";
+import { activateBike, checkAndPlan, finishMaintaining, getBikeBySeriesNo, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listRepairByDate, listSection, registerBike, startMaintaining } from "../services/bikeService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkParams, lengthRestriction } from "../utils/body";
 
@@ -88,6 +88,10 @@ maintainerRouter.post('/malfunction/handle', checkBodyAsEntity(RepairRecord), as
 maintainerRouter.get("/repair/list", checkParams(paginatorParams), async ctx => {
   let { lastId, size } = ctx.query as Paginator
   ctx.body = Result.success(await listRepair(ctx.state.user.id, parseInt(lastId), parseInt(size)))
+})
+
+maintainerRouter.get("/repair/graph", async ctx => {
+  ctx.body = Result.success(await listRepairByDate(ctx.state.user.id))
 })
 
 maintainerRouter.use('/bike', bikeRouter.routes())
