@@ -29,7 +29,6 @@ export class RideRecord {
   @Column(Number)
   public customer_id: number
   
-  @Restriction('positive')
   @Column(Number)
   public mileage: number
   
