@@ -88,9 +88,7 @@ abstract class BaseDb<TEntity extends Object, TCondition = TEntity> {
   }
   
   public async pullBySearching(conditions: ConditionType<TCondition>[]): Promise<TEntity | undefined> {
-    let t = (await this.list(conditions))[0]
-    console.log(t)
-    return t
+    return (await this.list(conditions))[0]
   }
   abstract list(
     conditions?: ConditionType<TCondition>[],
