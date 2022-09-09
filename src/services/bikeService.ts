@@ -76,10 +76,12 @@ export function getBike(bikeId: number) {
   return transactionWrapper("getBike", async connection => (await new Bike(connection).fetchBike(bikeId)).raw)
 }
 
-export function getBikeBySeriesNo(seriesNo: string) {
-  return transactionWrapper("getBikeBySeriesNo", async connection =>
-    await new DbEntity(RawBike, connection).pullBySearching([[['series_no'], '=', seriesNo]])
-  )
+export function getBikeBySeriesNo(seriesNo: string, availableOnly: boolean) {
+  return transactionWrapper("getBikeBySeriesNo", async connection => {
+    const conditions: ConditionType<RawBike>[] = [[['series_no'], '=', seriesNo]]
+    if (availableOnly) conditions.push([['status'], '=', BIKE_AVAILABLE])
+    await new DbEntity(RawBike, connection).pullBySearching(conditions)
+  })
 }
 
 export function tryUnlockBike(customerId: number, bikeId: number, encrypted: string) {
