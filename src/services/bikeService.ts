@@ -80,6 +80,7 @@ export function getBikeBySeriesNo(seriesNo: string, availableOnly: boolean) {
   return transactionWrapper("getBikeBySeriesNo", async connection => {
     const conditions: ConditionType<RawBike>[] = [[['series_no'], '=', seriesNo]]
     if (availableOnly) conditions.push([['status'], '=', BIKE_AVAILABLE])
+    console.log(seriesNo)
     await new DbEntity(RawBike, connection).pullBySearching(conditions)
   })
 }
