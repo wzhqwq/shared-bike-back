@@ -228,11 +228,11 @@ export function listMalfunctionRecords(customerId: number, rideId: number) {
 export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, size: number = 20) {
   return transactionWrapper("listMalfunctionRecordsOfBike", async (connection) => {
     return (await new DbJoined(
-      new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
       new DbEntity(MalfunctionRecord).asTable([[['id'], '<', lastId], [['status'], '=', REPAIR_UNHANDLED]]),
+      new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
       connection
     ).list(undefined, undefined, size, { key: 'id', mode: 'DESC' }))
-      .map(([r, m]) => m)
+      .map(([m, r]) => m)
       .sort((a, b) => b.id - a.id)
   })
 }
