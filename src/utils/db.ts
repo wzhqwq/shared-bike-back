@@ -28,8 +28,8 @@ type QueryResult<RowT> = RowT[] & {
 
 export function query<RowT>(sql: string | QueryOptions, values?: any[], connection?: Connection): Promise<QueryResult<RowT>> {
   return new Promise((resolve, reject) => {
-    (connection ?? pool).query(sql, values, (error, data, field) => {
-      logger.debug("MySQL Executed: ", sql, values)
+    let q = (connection ?? pool).query(sql, values, (error, data, field) => {
+      logger.debug("MySQL Executed: ", q.sql)
       if (error) {
         reject(new DatabaseError(error))
         logger.error("MySQL Execution Failed: ", error.sqlMessage, error.sql)
