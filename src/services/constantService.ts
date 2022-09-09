@@ -26,7 +26,7 @@ export const getMalfunctions = () => cachedMalfunctions
 export const getSeriesList = () => cachedSeriesList
 
 export function getConfigValue(id: number) {
-  return cachedConfigs[id].value
+  return cachedConfigs[id - 1].value
 }
 
 export function setConfig(pairs: Configuration[]) {
