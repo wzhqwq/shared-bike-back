@@ -283,7 +283,7 @@ function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntit
 }
 function parseExpression<TEntity extends Object>(expression: ExpressionType<TEntity>): [string, any[]] {
   if (expression instanceof Array) {
-    if (expression.length == 1) return ['??', [expression]]
+    if (expression.length == 1) return ['??', expression]
     let l = parseExpression(expression[0])
     let r = parseExpression(expression[2])
     return [`(${l[0]} ${expression[1]} ${r[0]})`, [...l[1], ...r[1]]]
