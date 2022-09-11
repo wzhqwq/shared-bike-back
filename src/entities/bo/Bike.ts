@@ -13,6 +13,8 @@ import { posDecimal } from "../../utils/body"
 import { punishAfterwards } from "../../services/customerPropertyService"
 import { RawCustomer } from "../dto/RawUser"
 
+const fixedWidth = (n: number) => (n < 10 ? '0' : '') + n
+
 export class Bike {
   public raw: RawBike
   private bikeDb: RedisDbEntity<RawBike>
@@ -96,7 +98,7 @@ export class Bike {
       await new DbEntity(RawCustomer, this.connection)
         .update([['mileage_total', [['mileage_total'], '+', mileage]]], [[['user_id'], '=', userId]])
 
-      return `${duration.toFixed(0)},${charge.toFixed(2)},${record.id}`
+      return `${Math.floor(duration / 60)}:${fixedWidth(Math.floor(duration) % 60)},${charge.toFixed(2)},${record.id}`
     }
     throw new LogicalError("无效更新操作")
   }

@@ -91,7 +91,7 @@ export function tryUnlockBike(customerId: number, bikeId: number, encrypted: str
     let user = await new DbEntity(RawCustomer, connection).pullBySearching([[['user_id'], '=', customerId]])
     if (!user) throw new LogicalError('用户不存在')
 
-    if (user.ban_time && user.ban_time < new Date())
+    if (user.ban_time && user.ban_time > new Date())
       throw new LogicalError('您因为点数过低被封禁了一段时间，无法骑车，您可以联系管理员解封')
 
     let series = await new DbEntity(BikeSeries, connection).pullBySearching([[['id'], '=', bike.raw.series_id]])
