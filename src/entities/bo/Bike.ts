@@ -150,6 +150,10 @@ export class Bike {
     await this.bikeDb.save(this.raw)
   }
 
+  public async startMaintaining() {
+    await this.update(BIKE_UNAVAILABLE)
+  }
+
   public async finishMaintaining(posLongitude: string, posLatitude: string) {
     await this.update(BIKE_AVAILABLE, posLongitude, posLatitude)
   }
@@ -193,6 +197,6 @@ export class Bike {
       duration < getConfigValue(CONFIG_CHARGE_MIN_SECONDS) ||
       milage < getConfigValue(CONFIG_CHARGE_MIN_MILAGE)
     ) return 0
-    return duration * CONFIG_CHARGE_PER_MINUTE / 60
+    return (duration - getConfigValue(CONFIG_CHARGE_MIN_SECONDS)) * getConfigValue(CONFIG_CHARGE_PER_MINUTE) / 60
   }
 }

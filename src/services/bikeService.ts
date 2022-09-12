@@ -122,8 +122,8 @@ export function listRideRecords(customerId: number, lastId: number, size: number
 
 export function startMaintaining(bikeId: number) {
   return transactionWrapper("startMaintaining", async (connection) => {
-    let bikeDb = new DbEntity(RawBike, connection)
-    await bikeDb.update([['status', BIKE_UNAVAILABLE]], [[['id'], '=', bikeId]])
+    let bike = await (new Bike(connection).fetchBike(bikeId))
+    await bike.startMaintaining()
     return null
   })
 }
