@@ -5,7 +5,7 @@ import { GeoPoint, geoPointParams } from "../entities/dto/Geographical";
 import { Paginator, paginatorParams } from "../entities/dto/Paginator";
 import { RepairRecord } from "../entities/dto/RawRecords";
 import Result from "../entities/vo/Result";
-import { activateBike, checkAndPlan, finishMaintaining, getBikeBySeriesNo, handleMalfunction, listBikesInSection, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listRepairByDate, listSection, registerBike, startMaintaining } from "../services/bikeService";
+import { activateBike, checkAndPlan, finishMaintaining, getBikeBySeriesNo, handleMalfunction, listBikesInSection, listHealthDecreasesOfBike, listMalfunctionRecords, listMalfunctionRecordsOfBike, listParkingPointInSection, listRepair, listRepairByDate, listSection, registerBike, startMaintaining } from "../services/bikeService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkParams, lengthRestriction } from "../utils/body";
 
@@ -73,12 +73,19 @@ maintainerRouter.post('/maintain/finish', checkBody<GeoPoint & { bike_id: number
   ctx.body = Result.success(await finishMaintaining(body.bike_id, body.p_longitude, body.p_latitude))
 })
 
-maintainerRouter.get("/malfunction/list", checkParams<Paginator & { bike_id: string }>([
+maintainerRouter.get("/malfunction/list", checkParams([
   { key: 'bike_id', restrictions: ['integer'] },
-  ...paginatorParams,
+  { key: 'malfunction_id', restrictions: ['integer'] },
 ]), async ctx => {
-  let { lastId, size, bike_id } = ctx.query as Paginator & { bike_id: string }
-  ctx.body = Result.success(await listMalfunctionRecordsOfBike(parseInt(bike_id), parseInt(lastId), parseInt(size)))
+  let { bike_id, malfunction_id } = ctx.query as { bike_id: string, malfunction_id: string }
+  ctx.body = Result.success(await listMalfunctionRecordsOfBike(parseInt(bike_id), parseInt(malfunction_id)))
+})
+
+maintainerRouter.get("/malfunction/list_decreases", checkParams([
+  { key: 'bike_id', restrictions: ['integer'] },
+]), async ctx => {
+  let { bike_id } = ctx.query as { bike_id: string }
+  ctx.body = Result.success(await listHealthDecreasesOfBike(parseInt(bike_id)))
 })
 
 maintainerRouter.post('/malfunction/handle', checkBodyAsEntity(RepairRecord), async ctx => {

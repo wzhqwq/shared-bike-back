@@ -161,6 +161,12 @@ export class Bike {
   public async calculateHealth() {
     if (this.raw.mileage > getSeries(this.raw.series_id).mileage_limit) return 0 // 超过报废里程就报废
 
+    let health = 100
+    
+    return Math.floor(health - (await this.listHealthDecreases()).reduce((sum, now) => sum + now.decrease, 0))
+  }
+
+  public async listHealthDecreases() {
     let records = await new DbJoined(
       new DbEntity(MalfunctionRecord).asTable([
         [['bike_id'], '=', this.raw.id],
@@ -180,16 +186,15 @@ export class Bike {
       list.push(r.degree)
     })
 
-    let health = 100
-    map.forEach(({ degree, multiplier }) => {
+    let decreaseList: ({ id: number, decrease: number })[] = []
+    map.forEach(({ degree, multiplier }, id) => {
       if (degree.length < 3) return
       let sortedDegrees = degree.sort((a, b) => b - a)  // 降序排序
       let avgDegree = sortedDegrees[0] === 10 ? 10 :    // 若出现致命故障直接扣大分
         sortedDegrees.slice(1, -2).reduce((a, b) => a + b) / (degree.length - 2)  // 否则去掉最高分最低分求平均
-      health -= avgDegree * multiplier
+      decreaseList.push({ id, decrease: avgDegree * multiplier })
     })
-    
-    return Math.floor(health)
+    return decreaseList
   }
 
   public async calculateCharge(duration: number, milage: number) {

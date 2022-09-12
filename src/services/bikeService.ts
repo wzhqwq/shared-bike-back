@@ -1,4 +1,4 @@
-import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_NOT_ACTIVATED, BIKE_UNAVAILABLE, CONFIG_REWARD_BASE, CONFIG_REWARD_DESCRIPTION, CONFIG_REWARD_PICTURE, CONFIG_SAFE_HEALTH, REPAIR_FAILED, REPAIR_UNHANDLED, SEARCH_RANGE } from "../constant/values"
+import { BIKE_AVAILABLE, BIKE_DESTROYED, BIKE_NOT_ACTIVATED, BIKE_UNAVAILABLE, CONFIG_REWARD_BASE, CONFIG_REWARD_DESCRIPTION, CONFIG_REWARD_PICTURE, CONFIG_SAFE_HEALTH, REPAIR_FAILED, REPAIR_IGNORED, REPAIR_UNHANDLED, SEARCH_RANGE } from "../constant/values"
 import { Bike } from "../entities/bo/Bike"
 import { BikeSeries, RawBike } from "../entities/dto/RawBike"
 import { Malfunction } from "../entities/dto/Malfunction"
@@ -149,7 +149,7 @@ export function handleMalfunction(repairRecord: RepairRecord) {
       throw new LogicalError("故障不存在")
     
     let malfunctionRecords = await mRecordDb.list([
-      [['status'], '=', REPAIR_UNHANDLED],
+      [['status'], '<', REPAIR_IGNORED],
       [['bike_id'], '=', repairRecord.bike_id],
       [['malfunction_id'], '=', repairRecord.malfunction_id],
     ], ['id'])
@@ -158,7 +158,7 @@ export function handleMalfunction(repairRecord: RepairRecord) {
     await mRecordDb.update([
       ['status', repairRecord.conclusion + 1]
     ], [
-      [['status'], '=', REPAIR_UNHANDLED],
+      [['status'], '<', REPAIR_IGNORED],
       [['bike_id'], '=', repairRecord.bike_id],
       [['malfunction_id'], '=', repairRecord.malfunction_id],
     ])
@@ -224,15 +224,20 @@ export function listMalfunctionRecords(customerId: number, rideId: number) {
   })
 }
 
-export function listMalfunctionRecordsOfBike(bikeId: number, lastId: number, size: number = 20) {
+export function listHealthDecreasesOfBike(bikeId: number) {
+  return transactionWrapper("listHealthDecreasesOfBike", async (connection) => {
+    let bike = await (new Bike(connection).fetchBike(bikeId))
+    return await bike.listHealthDecreases()
+  })
+}
+
+export function listMalfunctionRecordsOfBike(bikeId: number, malfunctionId: number) {
   return transactionWrapper("listMalfunctionRecordsOfBike", async (connection) => {
-    return (await new DbJoined(
-      new DbEntity(MalfunctionRecord).asTable([[['id'], '<', lastId], [['status'], '=', REPAIR_UNHANDLED]], size, { key: 'id', mode: 'DESC' }),
-      new DbEntity(RideRecord).asTable([[['bike_id'], '=', bikeId]]),
-      connection
-    ).list())
-      .map(([m, r]) => m)
-      .sort((a, b) => b.id - a.id)
+    return await new DbEntity(MalfunctionRecord, connection).list([
+      [['bike_id'], '=', bikeId],
+      [['malfunction_id'], '=', malfunctionId],
+      [['status'], '<', REPAIR_IGNORED],
+    ])
   })
 }
 
