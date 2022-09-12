@@ -315,7 +315,9 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
     let o = JSON.parse(result)
     let entity = new this.C()
     let properties = getProperties(entity)
-    properties.forEach(k => k.value = o[k.column.key])
+    properties.forEach(k => {
+      k.value = k.column.c === Date ? new Date(o[k.column.key]) : o[k.column.key]
+    })
     return entity
   }
 
