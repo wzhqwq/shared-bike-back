@@ -123,12 +123,12 @@ export class Bike {
       ])
       let pp = await ppDb.pullBySearching([
         [posLongitude, 'BETWEEN', [
-          [['p_longitude'], '-', [['bikes_count'], '*', EXPAND_RATE]],
-          [['p_longitude'], '+', [['bikes_count'], '*', EXPAND_RATE]],
+          [['p_longitude'], '-', [[['bikes_count'], '+', 2], '*', EXPAND_RATE]],
+          [['p_longitude'], '+', [[['bikes_count'], '+', 2], '*', EXPAND_RATE]],
         ]],
         [posLatitude, 'BETWEEN', [
-          [['p_latitude'], '-', [['bikes_count'], '*', EXPAND_RATE]],
-          [['p_latitude'], '+', [['bikes_count'], '*', EXPAND_RATE]],
+          [['p_latitude'], '-', [[['bikes_count'], '+', 2], '*', EXPAND_RATE]],
+          [['p_latitude'], '+', [[['bikes_count'], '+', 2], '*', EXPAND_RATE]],
         ]],
       ])
 
