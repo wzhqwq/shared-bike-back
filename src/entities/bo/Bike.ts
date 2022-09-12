@@ -72,7 +72,7 @@ export class Bike {
       record.mileage = mileage
 
       await this.update(status, posLongitude, posLatitude)
-      await recordDb.save(record)
+      await recordDb.append(record)
       return ''
     }
     if (this.raw.status === BIKE_OCCUPIED) {
@@ -88,6 +88,7 @@ export class Bike {
         // 关锁成功
         record.end_time = new Date()
         record.charge = charge.toFixed(2)
+        recordDb.removeCache(this.raw.id)
         if (!this.raw.parking_point_id) {
           // 不在停车点停车扣积分
           punishAfterwards(userId, getConfigValue(CONFIG_OUT_OF_PP_PUNISH_POINTS), '未在停车点停车')
