@@ -310,6 +310,7 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
 
   public async get(keyword: any) {
     let result = await redisClient.getEx(this.prefix + keyword, { EX: 60 })
+    console.log("GET " + this.prefix + keyword, result)
     if (!result) return await this.db.pullBySearching([[[this.fetchKey], '=', keyword]])
     let o = JSON.parse(result)
     let entity = new this.C()
