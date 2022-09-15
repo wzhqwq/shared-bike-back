@@ -145,6 +145,7 @@ export class Bike {
     else {
       if (this.raw.parking_point_id) {
         await ppDb.update([['bikes_count', [['bikes_count'], '-', 1]]], [[['id'], '=', this.raw.parking_point_id]])
+        this.raw.parking_point_id = null
       }
     }
     await this.bikeDb.save(this.raw)
