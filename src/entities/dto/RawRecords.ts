@@ -68,7 +68,7 @@ export class MalfunctionRecord extends BaseRecord {
   @Column(Number)
   public degree: number
   
-  @Length(1, 50)
+  @Length(0, 50)
   @Column(String)
   public description: string
   

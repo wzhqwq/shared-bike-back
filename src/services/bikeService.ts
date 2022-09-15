@@ -187,6 +187,7 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
   return transactionWrapper("reportMalfunction", async (connection) => {
     let malfunctionIds = getMalfunctions().map(m => m.id)
     if (mRecords.some(r => !malfunctionIds.includes(r.malfunction_id))) throw new LogicalError("故障ID不存在")
+    if (mRecords.some(r => r.ride_id !== mRecords[0].ride_id)) throw new LogicalError("故障报告包含了不同的骑行")
 
     let rideDb = new DbEntity(RideRecord, connection)
     let rideRecord = await rideDb.pullBySearching([[['id'], '=', mRecords[0].ride_id]])
@@ -195,9 +196,11 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
     let bikeId = rideRecord.bike_id
 
     let mRecordDb = new DbEntity(MalfunctionRecord, connection)
+    if (await mRecordDb.pullBySearching([[['ride_id'], '=', mRecords[0].ride_id]])) throw new LogicalError("该骑行已经报修过了")
     await Promise.all(mRecords.map(async r => {
       r.bike_id = bikeId
       r.status = REPAIR_UNHANDLED
+      r.time = new Date()
       return await mRecordDb.append(r)
     }))
 
