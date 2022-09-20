@@ -192,7 +192,7 @@ export class Bike {
       if (degree.length < 3) return
       let sortedDegrees = degree.sort((a, b) => b - a)  // 降序排序
       let avgDegree = sortedDegrees[0] === 10 ? 10 :    // 若出现致命故障直接扣大分
-        sortedDegrees.slice(1, -2).reduce((a, b) => a + b) / (degree.length - 2)  // 否则去掉最高分最低分求平均
+        sortedDegrees.slice(1, -1).reduce((a, b) => a + b) / (degree.length - 2)  // 否则去掉最高分最低分求平均
       decreaseList.push({ id, decrease: avgDegree * multiplier })
     })
     return decreaseList
