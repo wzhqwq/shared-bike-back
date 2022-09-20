@@ -159,6 +159,11 @@ export class Bike {
     await this.update(BIKE_AVAILABLE, posLongitude, posLatitude)
   }
 
+  public async updateHealth() {
+    this.raw.health = await this.calculateHealth()
+    await this.bikeDb.save(this.raw)
+  }
+
   public async calculateHealth() {
     if (this.raw.mileage > getSeries(this.raw.series_id).mileage_limit) return 0 // 超过报废里程就报废
 

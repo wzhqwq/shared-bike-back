@@ -212,6 +212,9 @@ export function reportMalfunction(mRecords: MalfunctionRecord[], customerId: num
 
     await rideDb.save(rideRecord)
 
+    let bike = await (new Bike(connection).fetchBike(bikeId))
+    await bike.updateHealth()
+
     return points
   })
 }
