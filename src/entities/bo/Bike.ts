@@ -1,5 +1,5 @@
 import { PoolConnection } from "mysql"
-import { BIKE_AVAILABLE, BIKE_NOT_ACTIVATED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, CONFIG_OUT_OF_PP_PUNISH_POINTS, EXPAND_RATE, REPAIR_FAILED, REPAIR_FIXED } from "../../constant/values"
+import { BIKE_AVAILABLE, BIKE_NOT_ACTIVATED, BIKE_OCCUPIED, BIKE_UNAVAILABLE, CONFIG_CHARGE_MIN_MILAGE, CONFIG_CHARGE_MIN_SECONDS, CONFIG_CHARGE_PER_MINUTE, CONFIG_OUT_OF_PP_PUNISH_POINTS, EXPAND_RATE, REPAIR_FAILED, REPAIR_FIXED, REPAIR_IGNORED } from "../../constant/values"
 import { bikeComm } from "../../utils/auth"
 import { LogicalError } from "../../utils/errors"
 import { RawBike } from "../dto/RawBike"
@@ -176,7 +176,7 @@ export class Bike {
     let records = await new DbJoined(
       new DbEntity(MalfunctionRecord).asTable([
         [['bike_id'], '=', this.raw.id],
-        [['status'], '<', REPAIR_FIXED],
+        [['status'], '<', REPAIR_IGNORED],
       ]),
       new DbEntity(Malfunction).asTable(),
       this.connection

@@ -140,11 +140,10 @@ export function handleMalfunction(repairRecord: RepairRecord) {
   return transactionWrapper("handleMalfunction", async (connection) => {
     let repairDb = new DbEntity(RepairRecord, connection)
     let bikeDb = new DbEntity(RawBike, connection)
+    let bike = await (new Bike(connection).fetchBike(repairRecord.bike_id))
     let malfunctionDb = new DbEntity(Malfunction, connection)
     let mRecordDb = new DbEntity(MalfunctionRecord, connection)
     
-    if (!await bikeDb.pullBySearching([[['id'], '=', repairRecord.bike_id]]))
-      throw new LogicalError("单车不存在")
     if (!await malfunctionDb.pullBySearching([[['id'], '=', repairRecord.malfunction_id]]))
       throw new LogicalError("故障不存在")
     
@@ -178,6 +177,8 @@ export function handleMalfunction(repairRecord: RepairRecord) {
         [['id'], '=', repairRecord.bike_id]
       ])
     }
+
+    await bike.updateHealth()
 
     return malfunctionRecords.map(r => r.id)
   })

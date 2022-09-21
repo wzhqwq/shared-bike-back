@@ -65,7 +65,7 @@ export class RawMaintainer {
   @Column(String)
   public phone: string
 
-  @Nullable
+  @Readonly
   @Column(Number)
   public handle_count: number
 }

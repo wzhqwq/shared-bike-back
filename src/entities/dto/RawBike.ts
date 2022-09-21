@@ -66,7 +66,7 @@ export class RawBike {
   @Column(String, 10)
   public token: string
 
-  @Nullable
+  @Readonly
   @Column(Number)
   public fail_count: number
 }
