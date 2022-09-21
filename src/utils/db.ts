@@ -101,18 +101,13 @@ export async function transactionWrapper<T>(
     return result
   }
   catch (e) {
-    if (e instanceof DatabaseError) {
-      // 只要是数据库错误，服务器一定会帮忙回滚，只需检查是否是由死锁（ER_LOCK_DEADLOCK）引发的错误
-      if (connection.state !== 'disconnected') connection.release()
-      if (e.code === 'ER_LOCK_DEADLOCK' && retryCount < 1) {
-        // 忽略异常，300ms后重新执行业务，但仅重试一次
-        await new Promise(res => setTimeout(res, 300))
-        return await transactionWrapper<T>(name, fn, retryCount + 1)
-      }
-    }
-    else {
-      await rollback()
-      if (connection.state !== 'disconnected') connection.release()
+    await rollback()
+    if (connection.state !== 'disconnected') connection.release()
+    // 检查是否是由死锁（ER_LOCK_DEADLOCK）引发的错误
+    if (e instanceof DatabaseError && e.code === 'ER_LOCK_DEADLOCK' && retryCount < 1) {
+      // 忽略异常，300ms后重新执行业务，但仅重试一次
+      await new Promise(res => setTimeout(res, 300))
+      return await transactionWrapper<T>(name, fn, retryCount + 1)
     }
     logger.trace("Transaction Aborted: ", name)
     throw e

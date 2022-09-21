@@ -89,7 +89,7 @@ maintainerRouter.get("/malfunction/list_decreases", checkParams([
 })
 
 maintainerRouter.post('/malfunction/handle', checkBodyAsEntity(RepairRecord), async ctx => {
-  ctx.body = Result.success(await handleMalfunction(ctx.request.body))
+  ctx.body = Result.success(await handleMalfunction(ctx.request.body, ctx.state.user.id))
 })
 
 maintainerRouter.get("/repair/list", checkParams(paginatorParams), async ctx => {

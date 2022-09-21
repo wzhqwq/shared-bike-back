@@ -136,7 +136,7 @@ export function finishMaintaining(bikeId: number, posLongitude: string, posLatit
   })
 }
 
-export function handleMalfunction(repairRecord: RepairRecord) {
+export function handleMalfunction(repairRecord: RepairRecord, maintainerId: number) {
   return transactionWrapper("handleMalfunction", async (connection) => {
     let repairDb = new DbEntity(RepairRecord, connection)
     let bikeDb = new DbEntity(RawBike, connection)
@@ -162,6 +162,8 @@ export function handleMalfunction(repairRecord: RepairRecord) {
       [['malfunction_id'], '=', repairRecord.malfunction_id],
     ])
 
+    repairRecord.maintainer_id = maintainerId
+    repairRecord.time = new Date()
     await repairDb.append(repairRecord)
 
     await new DbEntity(RawMaintainer, connection).update([
