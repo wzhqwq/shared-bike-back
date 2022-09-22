@@ -44,10 +44,10 @@ export function getBillStatistics() {
     startTime.setHours(0, 0, 0, 0)
     let income = parseFloat((await query<{ c: string }>(
       "SELECT SUM(`change`) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` > 0.00", [startTime], connection
-    ))[0].c)
+    ))[0].c) ?? 0
     let expenditure = parseFloat((await query<{ c: string }>(
       "SELECT (0 - SUM(`change`)) AS c FROM `ManagerBill` WHERE `time` > ? AND `change` < 0.00", [startTime], connection
-    ))[0].c)
+    ))[0].c) ?? 0
     return { income, expenditure }
   })
 }
