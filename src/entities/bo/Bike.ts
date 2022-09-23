@@ -161,6 +161,7 @@ export class Bike {
 
   public async updateHealth() {
     this.raw.health = await this.calculateHealth()
+    console.log(this.raw.health)
     await this.bikeDb.save(this.raw)
   }
 
