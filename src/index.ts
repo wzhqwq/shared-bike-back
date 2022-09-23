@@ -56,7 +56,7 @@ app.use((ctx, next) =>
   })
 )
 app.use(cors({ origin: "*" }))
-app.use(jwtMiddleware.unless({ path: ['/auth/sign_in', '/auth/sign_up'] }))
+app.use(jwtMiddleware.unless({ path: ['/auth/sign_in', '/auth/sign_up', '/image/show'] }))
 
 let root = new Router()
 root.get("/", async ctx => {
