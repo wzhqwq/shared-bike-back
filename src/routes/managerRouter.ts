@@ -35,7 +35,7 @@ propertyRouter.get('/master/statistics', async ctx => {
 
 propertyRouter.get('/master/detail', checkParams([
   { key: 'record_id', restrictions: ['integer', 'positive']},
-  { key: 'type', restrictions: [c => ['0', '1', '2'].includes(c) ? '' : '应为0、1或2'] }
+  { key: 'type', restrictions: [c => ['0', '1', '2', '3'].includes(c) ? '' : '应为0、1、2或3'] }
 ]), async ctx => {
   let body = ctx.query as { record_id: string, type: string }
   ctx.body = Result.success(await getBillDetails(parseInt(body.type), parseInt(body.record_id)))
