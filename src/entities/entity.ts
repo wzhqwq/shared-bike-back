@@ -114,7 +114,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let id = properties.find(k => k.column.isPK)
     let modifiedKeys = properties.filter(k => k.modified && !k.column.isPK)
     modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
-    await query<null>(
+    await this.query<null>(
       "UPDATE ?? SET ? WHERE ?? = ?",
       [tableName, modifiedKeys.reduce((last, current) => ({ ...last, [current.column.key]: current.value }), {}),
         id.column.key, id.value]
@@ -129,7 +129,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let id = properties.find(k => k.column.isPK)
     let modifiedKeys = properties.filter(k => k.modified)
     if (autoIncrease) modifiedKeys = modifiedKeys.filter(k => !k.column.isPK)
-    let { insertId } = await query<null>(
+    let { insertId } = await this.query<null>(
       "INSERT INTO ?? (??) VALUES (?)",
       [tableName, modifiedKeys.map(k => k.column.key), modifiedKeys.map(k => k.value)]
     )
@@ -147,7 +147,7 @@ export class DbEntity<TEntity extends Object> extends BaseDb<TEntity> {
     let parsed = changes.map(current => [current[0], parseExpression(current[1])])
     let values = parsed.flatMap(current => [current[0], ...current[1][1]])
 
-    return (await query<null>(
+    return (await this.query<null>(
       `UPDATE ?? SET ${parsed.map(current => '?? = ' + current[1][0]).join(', ')} WHERE ` + whereClause,
       [tableName, ...values, ...additionalValues]
     )).affectedRows
