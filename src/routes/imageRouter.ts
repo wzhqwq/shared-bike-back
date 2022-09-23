@@ -14,6 +14,7 @@ imageRouter.get('/show', checkParams([
     ctx.body = image
   }
   catch (e) {
+    console.error(e)
     ctx.status = 404
     ctx.response.body = ''
   }
