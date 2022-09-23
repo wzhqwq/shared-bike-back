@@ -10,8 +10,9 @@ export function putImage(req: http.IncomingMessage): Promise<string> {
   return new Promise(res => {
     gen.next((err, id) => {
       let key = id.toString('hex')
-      req.pipe(fs.createWriteStream(IMAGE_BASE + '/img_' + key))
-      res(key)
+      req.pipe(fs.createWriteStream(IMAGE_BASE + '/img_' + key)).on('close', () => {
+        res(key)
+      })
     })
   })
 }
