@@ -1,7 +1,6 @@
 import * as fs from 'fs'
 import * as http from 'http'
 import { IMAGE_BASE } from '../constant/values'
-import { LogicalError } from '../utils/errors'
 import FlakeId = require('flake-idgen')
 
 const gen = new FlakeId()
