@@ -4,7 +4,7 @@ import { SignUpRequest } from "../entities/dto/RawRecords"
 import { RawMaintainer, RawManager, RawUser } from "../entities/dto/RawUser"
 import { getRestrictions } from "../entities/entity"
 import Result from "../entities/vo/Result"
-import { createSpecificUser, editNickname, editPassword, editProfile, getUser, mixUser, requestToBe, signIn, signUp } from "../services/userService"
+import { createSpecificUser, editAvatar, editNickname, editPassword, editProfile, getUser, mixUser, requestToBe, signIn, signUp } from "../services/userService"
 import { checkBody, checkBodyAsEntity, lengthRestriction } from "../utils/body"
 
 let authRouter = new Router()
@@ -36,16 +36,17 @@ authRouter.post('/check_role', async ctx => {
 
 authRouter.post('/edit_profile', checkBody([
   { key: 'nickname', restrictions: getRestrictions(RawUser, 'nickname'), nullable: true },
+  { key: 'avatar_key', restrictions: getRestrictions(RawUser, 'avatar_key'), nullable: true },
   { key: 'name', restrictions: getRestrictions(RawMaintainer, 'name'), nullable: true },
   { key: 'phone', restrictions: getRestrictions(RawMaintainer, 'phone'), nullable: true },
 ]), async ctx => {
   let user = ctx.state.user
-  let data: { nickname: string, phone: string, name: string } = ctx.request.body
-  let basicUser: RawUser = null, extraUser: RawMaintainer | RawManager = null
+  let data: { nickname: string, phone: string, name: string, avatar_key: string } = ctx.request.body
 
-  if (data.nickname) basicUser = await editNickname(data.nickname, user.id)
-  if (data.phone && data.name) extraUser = await editProfile(data.name, data.phone, user.id, user.role)
-  ctx.body = Result.success(mixUser(basicUser, extraUser))
+  if (data.nickname) await editNickname(data.nickname, user.id)
+  if (data.avatar_key) await editAvatar(data.avatar_key, user.id)
+  if (data.phone && data.name) await editProfile(data.name, data.phone, user.id, user.role)
+  ctx.body = Result.success(null)
 })
 
 authRouter.post('/edit_password', checkBody([

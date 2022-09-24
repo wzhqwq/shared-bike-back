@@ -127,12 +127,7 @@ export function editProfile(name: string, phone: string, id: number, role: numbe
   return transactionWrapper("editProfile", async connection => {
     if (role > CUSTOMER_USER) {
       let db = new DbEntity(role === MAINTAINER_USER ? RawMaintainer: RawManager, connection)
-      let user = role === MAINTAINER_USER ? new RawMaintainer() : new RawManager()
-      user.name = name
-      user.phone = phone
-      user.user_id = id
-      await db.save(user)
-      return user
+      await db.update([['name', name], ['phone', phone]], [[['user_id'], '=', id]])
     }
   })
 }
@@ -143,7 +138,6 @@ export function editNickname(nickname: string, id: number) {
     if (await db.pullBySearching([[['nickname'], '=', nickname], [['id'], '<>', id]]))
       throw new LogicalError("昵称已被使用")
     await db.update([['nickname', nickname]], [[['id'], '=', id]])
-    return null
   })
 }
 
@@ -151,7 +145,6 @@ export function editAvatar(key: string, id: number) {
   return transactionWrapper("editAvatar", async connection => {
     let db = new DbEntity(RawUser, connection)
     await db.update([['avatar_key', key]], [[['id'], '=', id]])
-    return null
   })
 }
 
