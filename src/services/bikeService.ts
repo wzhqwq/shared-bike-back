@@ -264,7 +264,7 @@ export function listRepairByDate(maintainerId: number) {
   return transactionWrapper("listRepairByDate", async (connection) => {
     let start = new Date()
     start.setHours(0, 0, 0, 0)
-    start = new Date(start.valueOf() - 19 * DAY)
+    start = new Date(start.valueOf() - 39 * DAY)
     return (await query<{ c: string, d: string }>(
       "SELECT COUNT(*) AS c, DATE(`time`) AS d FROM RepairRecord WHERE `time` > ? AND maintainer_id = ? GROUP BY DATE(`time`)",
       [start, maintainerId], connection))

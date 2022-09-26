@@ -266,12 +266,6 @@ export type ConditionType<TEntity extends Object> =
 export type SortType<TEntity extends Object> = { key: keyof TEntity, mode: 'ASC' | 'DESC' }
 
 function parseCondition<TEntity extends Object>(conditions: ConditionType<TEntity>[]): [string, any[]] {
-  // let sql = conditions.map(c => `?? ${c[1]} ${c[1] === 'BETWEEN' ? '? AND ?' : '?'}`).join(' AND ')
-  // let values = conditions.flatMap(c => [
-  //   typeof c[0] === 'object' ? `${c[0].fn}(${c[0].key.toString()})` : c[0].toString(),
-  //   ...(c[1] === 'BETWEEN' ? c[2] : [c[2]]),
-  // ])
-  // return [sql, values]
   let sql: string[] = [], values: any[] = []
   conditions.forEach(c => {
     let l = parseExpression(c[0]);
@@ -310,7 +304,6 @@ export class RedisDbEntity<TEntity extends (Object & { id: number })> {
 
   public async get(keyword: any) {
     let result = await redisClient.getEx(this.prefix + keyword, { EX: 60 })
-    console.log("GET " + this.prefix + keyword, result)
     if (!result) return await this.db.pullBySearching([[[this.fetchKey], '=', keyword]])
     let o = JSON.parse(result)
     let entity = new this.C()
