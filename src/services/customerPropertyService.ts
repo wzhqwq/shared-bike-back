@@ -33,7 +33,7 @@ export function listExchangeRecords(customerId: number, lastId: number, size: nu
         [['id'], '<', lastId],
       ], size, { key: 'id', mode: 'DESC' }),
       new DbEntity(Souvenir).asTable()
-    ).list()).sort((a, b) => b[0].id - a[0].id)
+    ).list()).sort((a, b) => b[0].id - a[0].id).map(([record, souvenir]) => ({ record, souvenir }))
   })
 }
 

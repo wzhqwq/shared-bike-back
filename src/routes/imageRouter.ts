@@ -20,7 +20,7 @@ imageRouter.get('/show', checkParams([
 })
 
 imageRouter.put('/upload', async ctx => {
-  ctx.body = Result.success(await putImage(ctx.req))
+  ctx.body = Result.success(await putImage(ctx.req, ctx.state.user.id))
 })
 
 export default imageRouter

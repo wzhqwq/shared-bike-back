@@ -3,10 +3,10 @@ import * as http from 'http'
 import { IMAGE_BASE } from '../constant/values'
 import FlakeId = require('flake-idgen')
 
-const gen = new FlakeId()
-
-export function putImage(req: http.IncomingMessage): Promise<string> {
+export function putImage(req: http.IncomingMessage, userId: number): Promise<string> {
   return new Promise(res => {
+    const gen = new FlakeId({ id: userId })
+
     gen.next((err, id) => {
       let key = id.toString('hex')
       req.pipe(fs.createWriteStream(IMAGE_BASE + '/img_' + key)).on('close', () => {
