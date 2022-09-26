@@ -148,14 +148,8 @@ export function getBikeStatistics() {
   })
 }
 
-export function listExchanges(customerId: number) {
-  return transactionWrapper('listExchanges', async connection =>
-    new DbEntity(ExchangeRecord, connection).list([[['customer_id'], '=', customerId]])
-  )
-}
-
 export function giveSouvenir(recordId: number, managerId: number) {
-  return transactionWrapper('listExchanges', async connection =>
+  return transactionWrapper('giveSouvenir', async connection =>
     new DbEntity(ExchangeRecord, connection).update([
       ['given', 1],
       ['given_by', managerId],

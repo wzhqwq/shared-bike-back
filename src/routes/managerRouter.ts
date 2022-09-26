@@ -13,10 +13,11 @@ import { getRestrictions } from "../entities/entity";
 import Result from "../entities/vo/Result";
 import { createParkingPoint, createSection, destroyBike, grantSectionTo, listBikes, listParkingPoint, removeParkingPoint, removeSection, revokeSectionFrom } from "../services/bikeService";
 import { addMalfunction, addSeries, addSouvenir, getConfigs, modifyMalfunctionName, modifySeries, modifySouvenir, removeSeries, setConfig } from "../services/constantService";
-import { getBikeStatistics, getBillDetails, getBillStatistics, giveSouvenir, listExchanges, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
+import { getBikeStatistics, getBillDetails, getBillStatistics, giveSouvenir, listMasterBill, listSeparatedBill, purchaseBikes, purchaseSouvenir, recordOtherBill } from "../services/departmentPropertyService";
 import { listUsers, listSignUpRequests, handleSignUpRequest, liftTheBanOfCustomer, getUser, listMaintainersInSection } from "../services/userService";
 import { roleOnly } from "../utils/auth";
 import { checkBody, checkBodyAsEntity, checkBodyAsEntityList, checkParams } from "../utils/body";
+import { listExchangeRecords } from "../services/customerPropertyService";
 
 const managerRouter = new Router()
 managerRouter.use(body())
@@ -151,10 +152,12 @@ souvenirRouter.post('/modify', checkBodyAsEntity(Souvenir), async ctx => {
   ctx.body = Result.success(await modifySouvenir(ctx.request.body))
 })
 
-souvenirRouter.get('/exchanges/list', checkParams([
+souvenirRouter.get('/exchanges/list', checkParams<Paginator & { customer_id: string }>([
   { key: 'customer_id', restrictions: ['integer', 'positive'] },
+  ...paginatorParams
 ]), async ctx => {
-  ctx.body = Result.success(await listExchanges(parseInt(ctx.query.customer_id as string)))
+  let { lastId, size, customer_id } = ctx.query as Paginator & { customer_id: string }
+  ctx.body = Result.success(await listExchangeRecords(parseInt(customer_id), parseInt(lastId), parseInt(size)))
 })
 
 souvenirRouter.post('/exchanges/give', checkBody([
